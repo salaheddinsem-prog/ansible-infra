@@ -18,6 +18,7 @@ table inet filter {
         tcp dport 22   ip saddr $ADMIN_NET    accept
         tcp dport 22   ip saddr $ANSIBLE_CTRL accept
         tcp dport 5432 ip saddr $SWARM_NODES  accept
+        tcp dport 10050 ip saddr $SWARM_NODES  accept   # Zabbix agent (checks passifs)
 
         tcp dport 22 log prefix "ssh-drop "
     }
