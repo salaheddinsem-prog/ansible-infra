@@ -1,0 +1,3 @@
+wazuh_agent_version: "4.14.8-1"
+# Manager publié en mode host sur le nœud labellisé wazuh.role=manager (swarm-wrk02)
+wazuh_manager_address: "{{ hostvars['swarm-wrk02']['ansible_host'] }}"
