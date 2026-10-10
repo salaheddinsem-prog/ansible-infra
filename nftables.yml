@@ -1,0 +1,5 @@
+- name: Pare-feu nftables
+  hosts: databases
+  become: true
+  roles:
+    - nftables

@@ -1,0 +1,15 @@
+- name: Déployer /etc/nftables.conf
+  ansible.builtin.template:
+    src: "{{ inventory_hostname }}.nft.j2"
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: "0755"
+    backup: true
+    validate: nft -c -f %s
+  notify: Recharger nftables
+
+- name: Activer nftables au démarrage
+  ansible.builtin.service:
+    name: nftables
+    enabled: true

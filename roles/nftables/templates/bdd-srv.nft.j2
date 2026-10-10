@@ -1,0 +1,32 @@
+#!/usr/sbin/nft -f
+# Pare-feu bdd-srv (VM 105) — serveur PostgreSQL
+flush ruleset
+
+define ADMIN_NET    = { 172.27.248.100, 172.27.248.190 }   # 172.27.248.100 = accès admin via FortiGate (NAT)
+define ANSIBLE_CTRL = { 172.27.248.114 }                # CT100 — contrôleur Ansible
+define SWARM_NODES  = { 172.27.248.110, 172.27.248.111, 172.27.248.112 }
+
+table inet filter {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        iif "lo" accept
+        ct state established,related accept
+        ct state invalid drop
+        meta l4proto { icmp, ipv6-icmp } accept
+
+        tcp dport 22   ip saddr $ADMIN_NET    accept
+        tcp dport 22   ip saddr $ANSIBLE_CTRL accept
+        tcp dport 5432 ip saddr $SWARM_NODES  accept
+
+        tcp dport 22 log prefix "ssh-drop "
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+}
