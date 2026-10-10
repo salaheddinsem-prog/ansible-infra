@@ -1,0 +1,6 @@
+zabbix_major: "7.0"
+zabbix_agent2_version: "1:7.0.31-1+debian13"
+zabbix_release_url: "https://repo.zabbix.com/zabbix/{{ zabbix_major }}/debian/pool/main/z/zabbix-release/zabbix-release_latest_{{ zabbix_major }}+debian{{ ansible_distribution_major_version }}_all.deb"
+
+# Sources autorisées pour les checks passifs : IP des nœuds Swarm (SNAT docker_gwbridge)
+zabbix_agent2_servers: "{{ groups['swarm'] | map('extract', hostvars, 'ansible_host') | join(',') }}"
