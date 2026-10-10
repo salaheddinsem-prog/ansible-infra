@@ -22,7 +22,7 @@
     action: allow
     protocol: tcp
     localport: 10050
-    remoteip: any
+    remoteip: "{{ zabbix_agent2_servers }}"
     enabled: true
     state: present
 
