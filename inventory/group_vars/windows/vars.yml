@@ -5,3 +5,5 @@ ansible_winrm_transport: ntlm
 ansible_winrm_message_encryption: always
 ansible_user: 'EXAMPLE\svc-ansible'
 ansible_password: "{{ vault_windows_password }}"
+# svc-ansible est déjà administrateur : pas d'élévation sur Windows
+ansible_become: false

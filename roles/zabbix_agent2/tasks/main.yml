@@ -1,41 +1,7 @@
-- name: Installer le paquet de configuration du dépôt Zabbix
-  ansible.builtin.apt:
-    deb: "{{ zabbix_release_url }}"
+- name: Tâches Linux
+  ansible.builtin.include_tasks: linux.yml
+  when: ansible_os_family != "Windows"
 
-- name: Mettre à jour le cache APT
-  ansible.builtin.apt:
-    update_cache: true
-  changed_when: false
-
-- name: Installer zabbix-agent2 (version épinglée)
-  ansible.builtin.apt:
-    name: "zabbix-agent2={{ zabbix_agent2_version }}"
-    state: present
-
-- name: Bloquer les mises à jour automatiques de l'agent
-  ansible.builtin.dpkg_selections:
-    name: zabbix-agent2
-    selection: hold
-
-- name: Configurer Server et Hostname
-  ansible.builtin.lineinfile:
-    path: /etc/zabbix/zabbix_agent2.conf
-    regexp: "^{{ item.key }}="
-    line: "{{ item.key }}={{ item.value }}"
-  loop:
-    - { key: Server, value: "{{ zabbix_agent2_servers }}" }
-    - { key: Hostname, value: "{{ inventory_hostname }}" }
-  notify: Redémarrer zabbix-agent2
-
-- name: Désactiver les checks actifs (10051 non publié par le Swarm)
-  ansible.builtin.lineinfile:
-    path: /etc/zabbix/zabbix_agent2.conf
-    regexp: "^ServerActive="
-    state: absent
-  notify: Redémarrer zabbix-agent2
-
-- name: Activer et démarrer zabbix-agent2
-  ansible.builtin.service:
-    name: zabbix-agent2
-    state: started
-    enabled: true
+- name: Tâches Windows
+  ansible.builtin.include_tasks: windows.yml
+  when: ansible_os_family == "Windows"

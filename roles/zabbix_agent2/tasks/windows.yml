@@ -1,0 +1,33 @@
+- name: Configurer Server et Hostname
+  community.windows.win_lineinfile:
+    path: C:\Program Files\Zabbix Agent 2\zabbix_agent2.conf
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  loop:
+    - { key: Server, value: "{{ zabbix_agent2_servers }}" }
+    - { key: Hostname, value: "{{ ansible_hostname }}" }
+  notify: Redémarrer Zabbix Agent 2 (Windows)
+
+- name: Désactiver les checks actifs
+  community.windows.win_lineinfile:
+    path: C:\Program Files\Zabbix Agent 2\zabbix_agent2.conf
+    regexp: "^ServerActive="
+    state: absent
+  notify: Redémarrer Zabbix Agent 2 (Windows)
+
+- name: Règle pare-feu entrante 10050
+  community.windows.win_firewall_rule:
+    name: Zabbix Agent 2 listen port
+    direction: in
+    action: allow
+    protocol: tcp
+    localport: 10050
+    remoteip: any
+    enabled: true
+    state: present
+
+- name: Activer et démarrer l'agent Zabbix
+  ansible.windows.win_service:
+    name: Zabbix Agent 2
+    start_mode: delayed
+    state: started

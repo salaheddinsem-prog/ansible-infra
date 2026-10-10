@@ -1,54 +1,7 @@
-- name: Créer le dossier des clés APT
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: "0755"
-  tags: repo
+- name: Tâches Linux
+  ansible.builtin.include_tasks: linux.yml
+  when: ansible_os_family != "Windows"
 
-- name: Récupérer la clé GPG de Wazuh
-  ansible.builtin.get_url:
-    url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
-    dest: /etc/apt/keyrings/wazuh.asc
-    mode: "0644"
-  tags: repo
-
-- name: Déclarer le dépôt Wazuh 4.x (format deb822)
-  ansible.builtin.copy:
-    dest: /etc/apt/sources.list.d/wazuh.sources
-    mode: "0644"
-    content: |
-      Types: deb
-      URIs: https://packages.wazuh.com/4.x/apt/
-      Suites: stable
-      Components: main
-      Signed-By: /etc/apt/keyrings/wazuh.asc
-  tags: repo
-
-- name: Mettre à jour le cache APT
-  ansible.builtin.apt:
-    update_cache: true
-  changed_when: false
-  tags: repo
-
-- name: Installer wazuh-agent (version épinglée)
-  ansible.builtin.apt:
-    name: "wazuh-agent={{ wazuh_agent_version }}"
-    state: present
-
-- name: Bloquer les mises à jour automatiques de l'agent
-  ansible.builtin.dpkg_selections:
-    name: wazuh-agent
-    selection: hold
-
-- name: Définir l'adresse du manager
-  ansible.builtin.lineinfile:
-    path: /var/ossec/etc/ossec.conf
-    regexp: '^\s*<address>'
-    line: "      <address>{{ wazuh_manager_address }}</address>"
-  notify: Redémarrer wazuh-agent
-
-- name: Activer et démarrer wazuh-agent
-  ansible.builtin.service:
-    name: wazuh-agent
-    state: started
-    enabled: true
+- name: Tâches Windows
+  ansible.builtin.include_tasks: windows.yml
+  when: ansible_os_family == "Windows"

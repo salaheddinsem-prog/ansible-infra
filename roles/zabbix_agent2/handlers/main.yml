@@ -2,3 +2,8 @@
   ansible.builtin.service:
     name: zabbix-agent2
     state: restarted
+
+- name: Redémarrer Zabbix Agent 2 (Windows)
+  ansible.windows.win_service:
+    name: Zabbix Agent 2
+    state: restarted

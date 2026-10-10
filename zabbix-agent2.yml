@@ -1,5 +1,5 @@
 - name: Agent Zabbix 2 (mode passif)
-  hosts: databases
+  hosts: databases:windows
   become: true
   roles:
     - zabbix_agent2

@@ -2,3 +2,8 @@
   ansible.builtin.service:
     name: wazuh-agent
     state: restarted
+
+- name: Redémarrer WazuhSvc
+  ansible.windows.win_service:
+    name: WazuhSvc
+    state: restarted
