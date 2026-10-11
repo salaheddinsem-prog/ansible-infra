@@ -2,5 +2,11 @@ zabbix_major: "7.0"
 zabbix_agent2_version: "1:7.0.31-1+debian13"
 zabbix_release_url: "https://repo.zabbix.com/zabbix/{{ zabbix_major }}/debian/pool/main/z/zabbix-release/zabbix-release_latest_{{ zabbix_major }}+debian{{ ansible_distribution_major_version }}_all.deb"
 
-# Sources autorisées pour les checks passifs : IP des nœuds Swarm (SNAT docker_gwbridge)
-zabbix_agent2_servers: "{{ groups['swarm'] | map('extract', hostvars, 'ansible_host') | join(',') }}"
+# Sources supplémentaires pour les checks passifs (vide par défaut).
+# Nœuds Swarm : le zabbix-server qui interroge l'agent de son propre nœud
+# n'est pas traduit (SNAT) et arrive avec son IP docker_gwbridge.
+zabbix_agent2_extra_servers: []
+
+# Sources autorisées : IP des nœuds Swarm (SNAT docker_gwbridge pour les hôtes externes)
+# + sources supplémentaires éventuelles
+zabbix_agent2_servers: "{{ (groups['swarm'] | map('extract', hostvars, 'ansible_host') | list + zabbix_agent2_extra_servers) | join(',') }}"
