@@ -1,0 +1,127 @@
+version: "3.8"
+
+x-core-env: &core_env
+  DB_ENGINE: postgresql
+  DB_HOST: "{{ jumpserver_db_host }}"
+  DB_PORT: "{{ jumpserver_db_port }}"
+  DB_NAME: "{{ jumpserver_db_name }}"
+  DB_USER: "{{ jumpserver_db_user }}"
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  DOMAINS: "{{ jumpserver_domains }}"
+  LOG_LEVEL: "{{ jumpserver_log_level }}"
+
+x-connector-env: &connector_env
+  CORE_HOST: http://core:8080
+  BOOTSTRAP_TOKEN: "{{ jumpserver_bootstrap_token }}"
+  LOG_LEVEL: "{{ jumpserver_log_level }}"
+
+services:
+  redis:
+    image: "{{ jumpserver_redis_image }}"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    secrets:
+      - source: jms_redis_config
+        target: /usr/local/etc/redis/redis.conf
+    networks: [jms]
+    deploy:
+      placement:
+        constraints: ["node.hostname == {{ jumpserver_node_core }}"]
+
+  core:
+    image: "jumpserver/core:{{ jumpserver_version }}"
+    command: ["start", "web"]
+    environment: *core_env
+    secrets:
+      - source: jms_core_config
+        target: /opt/jumpserver/config.yml
+    volumes:
+      - "{{ jumpserver_data_root }}/core:/opt/jumpserver/data"
+    networks: [jms]
+    deploy:
+      placement:
+        constraints: ["node.hostname == {{ jumpserver_node_core }}"]
+
+  celery:
+    image: "jumpserver/core:{{ jumpserver_version }}"
+    command: ["start", "task"]
+    environment: *core_env
+    secrets:
+      - source: jms_core_config
+        target: /opt/jumpserver/config.yml
+    volumes:
+      - "{{ jumpserver_data_root }}/core:/opt/jumpserver/data"
+    networks: [jms]
+    deploy:
+      placement:
+        constraints: ["node.hostname == {{ jumpserver_node_core }}"]
+
+  web:
+    image: "jumpserver/web:{{ jumpserver_version }}"
+    volumes:
+      - "{{ jumpserver_data_root }}/core:/opt/jumpserver/data"
+    ports:
+      - target: 80
+        published: {{ jumpserver_http_port }}
+        protocol: tcp
+        mode: ingress
+    networks: [jms]
+    deploy:
+      placement:
+        constraints: ["node.hostname == {{ jumpserver_node_core }}"]
+
+  koko:
+    image: "jumpserver/koko:{{ jumpserver_version }}"
+    environment:
+      <<: *connector_env
+      NAME: jms-koko
+    volumes:
+      - "{{ jumpserver_data_root }}/koko:/opt/koko/data"
+    ports:
+      - target: 2222
+        published: {{ jumpserver_ssh_port }}
+        protocol: tcp
+        mode: ingress
+    networks: [jms]
+    deploy:
+      placement:
+        constraints: ["node.hostname == {{ jumpserver_node_connectors }}"]
+
+  lion:
+    image: "jumpserver/lion:{{ jumpserver_version }}"
+    environment:
+      <<: *connector_env
+      NAME: jms-lion
+    volumes:
+      - "{{ jumpserver_data_root }}/lion:/opt/lion/data"
+    networks: [jms]
+    deploy:
+      placement:
+        constraints: ["node.hostname == {{ jumpserver_node_connectors }}"]
+
+  chen:
+    image: "jumpserver/chen:{{ jumpserver_version }}"
+    environment:
+      <<: *connector_env
+      NAME: jms-chen
+    volumes:
+      - "{{ jumpserver_data_root }}/chen:/opt/chen/data"
+    networks: [jms]
+    deploy:
+      placement:
+        constraints: ["node.hostname == {{ jumpserver_node_connectors }}"]
+      resources:
+        limits:
+          memory: {{ jumpserver_chen_memory_limit }}
+
+networks:
+  jms:
+    driver: overlay
+
+secrets:
+  jms_core_config:
+    external: true
+    name: "jms_core_config_v{{ jumpserver_secrets_version }}"
+  jms_redis_config:
+    external: true
+    name: "jms_redis_config_v{{ jumpserver_secrets_version }}"

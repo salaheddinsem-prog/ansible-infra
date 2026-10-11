@@ -1,0 +1,57 @@
+---
+- name: Vérifier que les paramètres obligatoires sont définis
+  ansible.builtin.assert:
+    that:
+      - jumpserver_db_host | length > 0
+      - jumpserver_db_password | length > 0
+      - jumpserver_secret_key | length > 0
+      - jumpserver_bootstrap_token | length > 0
+      - jumpserver_redis_password | length > 0
+      - jumpserver_domains | length > 0
+    quiet: true
+  no_log: true
+
+- name: Installer les bibliothèques Python requises par community.docker
+  ansible.builtin.apt:
+    name:
+      - python3-docker
+      - python3-jsondiff
+    state: present
+
+- name: Créer les dossiers de données sur les nœuds concernés
+  ansible.builtin.file:
+    path: "{{ jumpserver_data_root }}/{{ item.dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - { node: "{{ jumpserver_node_core }}", dir: core }
+    - { node: "{{ jumpserver_node_connectors }}", dir: koko }
+    - { node: "{{ jumpserver_node_connectors }}", dir: lion }
+    - { node: "{{ jumpserver_node_connectors }}", dir: chen }
+  delegate_to: "{{ item.node }}"
+
+- name: Créer les Docker secrets depuis Vault
+  community.docker.docker_secret:
+    name: "{{ item.name }}_v{{ jumpserver_secrets_version }}"
+    data: "{{ lookup('ansible.builtin.template', item.template) }}"
+    state: present
+  loop:
+    - { name: jms_core_config, template: core-config.yml.j2 }
+    - { name: jms_redis_config, template: redis.conf.j2 }
+  loop_control:
+    label: "{{ item.name }}_v{{ jumpserver_secrets_version }}"
+  no_log: true
+
+- name: Contrôler que le fichier de stack se génère (affiche uniquement les services)
+  ansible.builtin.debug:
+    msg: "{{ (lookup('ansible.builtin.template', 'jumpserver-stack.yml.j2') | from_yaml).services.keys() | list }}"
+
+- name: Déployer la stack
+  community.docker.docker_stack:
+    name: "{{ jumpserver_stack_name }}"
+    compose:
+      - "{{ lookup('ansible.builtin.template', 'jumpserver-stack.yml.j2') | from_yaml }}"
+    state: present
+  no_log: true

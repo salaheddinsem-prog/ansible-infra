@@ -4,3 +4,11 @@
 # peut interroger l'agent (system.run reste refuse par defaut).
 zabbix_agent2_extra_servers:
   - 172.18.0.0/16
+
+# JumpServer
+jumpserver_db_host: 172.27.248.150
+jumpserver_db_password: "{{ hostvars['bdd-srv'].vault_jumpserver_db_password }}"
+jumpserver_secret_key: "{{ vault_jumpserver_secret_key }}"
+jumpserver_bootstrap_token: "{{ vault_jumpserver_bootstrap_token }}"
+jumpserver_redis_password: "{{ vault_jumpserver_redis_password }}"
+jumpserver_domains: "172.27.248.110:8082,172.27.248.111:8082,172.27.248.112:8082"

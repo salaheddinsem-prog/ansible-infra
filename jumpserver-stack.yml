@@ -1,0 +1,5 @@
+---
+- name: Déploiement de la stack JumpServer sur Swarm
+  hosts: swarm-mgr01
+  roles:
+    - jumpserver_stack
