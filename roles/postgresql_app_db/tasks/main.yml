@@ -1,0 +1,40 @@
+---
+- name: Installer le pilote Python requis par community.postgresql
+  ansible.builtin.apt:
+    name: python3-psycopg2
+    state: present
+
+- name: Créer les utilisateurs applicatifs
+  community.postgresql.postgresql_user:
+    name: "{{ item.owner }}"
+    password: "{{ item.password }}"
+    state: present
+  loop: "{{ postgresql_app_dbs }}"
+  loop_control:
+    label: "{{ item.owner }}"
+  become_user: postgres
+  no_log: true
+
+- name: Créer les bases applicatives
+  community.postgresql.postgresql_db:
+    name: "{{ item.name }}"
+    owner: "{{ item.owner }}"
+    encoding: UTF-8
+    state: present
+  loop: "{{ postgresql_app_dbs }}"
+  loop_control:
+    label: "{{ item.name }}"
+  become_user: postgres
+
+- name: Autoriser les hôtes applicatifs dans pg_hba.conf
+  ansible.builtin.blockinfile:
+    path: "{{ postgresql_hba_file }}"
+    marker: "# {mark} ANSIBLE MANAGED - postgresql_app_db"
+    block: |
+      {% for db in postgresql_app_dbs %}
+      {% for host in db.allowed_hosts %}
+      host    {{ db.name }}    {{ db.owner }}    {{ host }}/32    scram-sha-256
+      {% endfor %}
+      {% endfor %}
+    backup: true
+  notify: Recharger PostgreSQL

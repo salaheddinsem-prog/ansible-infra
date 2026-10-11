@@ -1,0 +1,6 @@
+---
+# Liste des bases applicatives à créer (à définir dans host_vars)
+postgresql_app_dbs: []
+
+postgresql_hba_file: /etc/postgresql/16/main/pg_hba.conf
+postgresql_service: postgresql@16-main

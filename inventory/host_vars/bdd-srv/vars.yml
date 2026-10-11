@@ -1,0 +1,9 @@
+---
+postgresql_app_dbs:
+  - name: jumpserver
+    owner: jumpserver
+    password: "{{ vault_jumpserver_db_password }}"
+    allowed_hosts:
+      - 172.27.248.110   # swarm-mgr01
+      - 172.27.248.111   # swarm-wrk01
+      - 172.27.248.112   # swarm-wrk02

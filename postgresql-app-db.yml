@@ -1,0 +1,6 @@
+---
+- name: Bases de données applicatives sur les serveurs de bases
+  hosts: databases
+  become: true
+  roles:
+    - postgresql_app_db
