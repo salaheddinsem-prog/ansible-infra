@@ -1,0 +1,6 @@
+# Le zabbix-server qui interroge l'agent de son propre noeud arrive
+# avec son IP docker_gwbridge (pas de SNAT pour un trafic local).
+# Elargit la surface : tout conteneur du noeud attache a docker_gwbridge
+# peut interroger l'agent (system.run reste refuse par defaut).
+zabbix_agent2_extra_servers:
+  - 172.18.0.0/16
