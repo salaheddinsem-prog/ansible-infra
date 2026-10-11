@@ -3,25 +3,25 @@ jumpserver_version: v4.10.19-ce
 jumpserver_redis_image: redis:7.4-alpine
 jumpserver_stack_name: jumpserver
 
-# Incrémenter pour publier un nouveau contenu de secret (un secret Docker est immuable)
-jumpserver_secrets_version: 1
+# Incrementer pour publier un nouveau contenu de secret (un secret Docker est immuable)
+jumpserver_secrets_version: 2
 
 # Placement
 jumpserver_node_core: swarm-wrk02        # core, celery, web, redis (partagent les données)
 jumpserver_node_connectors: swarm-mgr01  # koko, lion, chen
 jumpserver_data_root: /srv/jms
 
-# Ports publiés (réseau ingress Swarm)
+# Ports publics (reseau ingress Swarm)
 jumpserver_http_port: 8082
 jumpserver_ssh_port: 2222
 
-# Base de données
+# Base de donnes
 jumpserver_db_host: ""
 jumpserver_db_port: 5432
 jumpserver_db_name: jumpserver
 jumpserver_db_user: jumpserver
 
-# Secrets et paramètres propres à l'environnement : à définir dans l'inventaire
+# Secrets et parametres propres l'environnement : à definir dans l'inventaire
 jumpserver_db_password: ""
 jumpserver_secret_key: ""
 jumpserver_bootstrap_token: ""
@@ -30,3 +30,6 @@ jumpserver_domains: ""
 
 jumpserver_chen_memory_limit: 1G
 jumpserver_log_level: ERROR
+
+# Enregistrement des composants : false (fermé), auto (5 min après démarrage de core), true (ouvert)
+jumpserver_component_registration: false
