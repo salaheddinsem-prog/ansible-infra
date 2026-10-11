@@ -30,6 +30,7 @@ services:
 
   core:
     image: "jumpserver/core:{{ jumpserver_version }}"
+    hostname: jms-core   
     command: ["start", "web"]
     environment: *core_env
     secrets:
@@ -44,6 +45,7 @@ services:
 
   celery:
     image: "jumpserver/core:{{ jumpserver_version }}"
+    hostname: jms-celery
     command: ["start", "task"]
     environment: *core_env
     secrets:
@@ -92,6 +94,12 @@ services:
     environment:
       <<: *connector_env
       NAME: jms-lion
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 4822 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
     volumes:
       - "{{ jumpserver_data_root }}/lion:/opt/lion/data"
     networks: [jms]

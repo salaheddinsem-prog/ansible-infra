@@ -44,11 +44,43 @@
     label: "{{ item.name }}_v{{ jumpserver_secrets_version }}"
   no_log: true
 
-- name: Contrôler que le fichier de stack se génère (affiche uniquement les services)
+- name: Controler que le fichier de stack se genere (affiche uniquement les services)
   ansible.builtin.debug:
     msg: "{{ (lookup('ansible.builtin.template', 'jumpserver-stack.yml.j2') | from_yaml).services.keys() | list }}"
+- name: Valider la stack avec la CLI Docker (exécuté aussi en --check)
+  block:
+    - name: Créer un fichier temporaire pour la stack rendue
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .jms-stack.yml
+      register: jms_stack_tmp
+      check_mode: false
+      changed_when: false
 
-- name: Déployer la stack
+    - name: Rendre la stack dans le fichier temporaire
+      ansible.builtin.template:
+        src: jumpserver-stack.yml.j2
+        dest: "{{ jms_stack_tmp.path }}"
+        mode: "0600"
+      check_mode: false
+      changed_when: false
+      no_log: true
+
+    - name: Faire valider la stack par docker stack config
+      ansible.builtin.shell:
+        cmd: docker stack config -c {{ jms_stack_tmp.path }} > /dev/null
+      changed_when: false
+      check_mode: false
+
+  always:
+    - name: Supprimer le fichier temporaire
+      ansible.builtin.file:
+        path: "{{ jms_stack_tmp.path }}"
+        state: absent
+      check_mode: false
+      changed_when: false  
+      when: jms_stack_tmp.path is defined
+- name: Deployer la stack
   community.docker.docker_stack:
     name: "{{ jumpserver_stack_name }}"
     compose:
