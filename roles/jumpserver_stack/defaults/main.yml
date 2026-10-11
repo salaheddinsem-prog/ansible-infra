@@ -4,7 +4,7 @@ jumpserver_redis_image: redis:7.4-alpine
 jumpserver_stack_name: jumpserver
 
 # Incrementer pour publier un nouveau contenu de secret (un secret Docker est immuable)
-jumpserver_secrets_version: 2
+jumpserver_secrets_version: 3
 
 # Placement
 jumpserver_node_core: swarm-wrk02        # core, celery, web, redis (partagent les données)
