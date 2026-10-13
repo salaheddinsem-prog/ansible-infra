@@ -1,0 +1,43 @@
+<group name="fortigate,authentication_failed,">
+  <rule id="100500" level="5">
+    <if_sid>81603</if_sid>
+    <field name="logdesc">^SNMP query failed$</field>
+    <description>FortiGate: SNMP authentication failure.</description>
+  </rule>
+</group>
+
+<group name="fortigate,">
+  <!-- Surcharge de 81633 : trafic applicatif autorise -> niveau 0 (pas d'alerte).
+       Definition d'origine reprise a l'identique (0391-fortigate_rules.xml). -->
+  <rule id="81633" level="0" overwrite="yes">
+    <if_sid>81603</if_sid>
+    <match>subtype="app-ctrl"|subtype=app-ctrl</match>
+    <action>pass</action>
+    <description>Fortigate: App passed by firewall.</description>
+    <group>gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,pci_dss_10.6.1,</group>
+  </rule>
+
+  <!-- Enfants de 81633 : categories a garder visibles -->
+  <rule id="100501" level="6">
+    <if_sid>81633</if_sid>
+    <field name="appcat">^Remote.Access$</field>
+    <description>FortiGate: remote access application allowed ($(app)) from $(srcip).</description>
+    <group>remote_access,</group>
+  </rule>
+
+  <rule id="100502" level="5">
+    <if_sid>81633</if_sid>
+    <field name="appcat">^GenAI$</field>
+    <description>FortiGate: generative AI application used ($(app)) from $(srcip).</description>
+    <group>genai,</group>
+  </rule>
+
+  <!-- Appareil qui insiste : 20+ blocages web depuis la meme IP en 10 min.
+       81644 n'est pas modifiee : chaque blocage reste visible. -->
+  <rule id="100503" level="8" frequency="20" timeframe="600" ignore="600">
+    <if_matched_sid>81644</if_matched_sid>
+    <same_srcip />
+    <description>FortiGate: repeated blocked web requests from $(srcip) (last: $(url)).</description>
+    <group>web_blocked_repeated,</group>
+  </rule>
+</group>
