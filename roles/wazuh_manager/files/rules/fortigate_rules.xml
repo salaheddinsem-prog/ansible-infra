@@ -40,4 +40,25 @@
     <description>FortiGate: repeated blocked web requests from $(srcip) (last: $(url)).</description>
     <group>web_blocked_repeated,</group>
   </rule>
+
+  <!-- Gros transferts : enfants de 81618 (tout le trafic, niveau 1, non indexé).
+       Seules les sessions de 100 Mo ou plus deviennent des alertes.
+       L'upload est placé en premier : en cas de double correspondance, il l'emporte. -->
+  <rule id="100504" level="6">
+    <if_sid>81618</if_sid>
+    <field name="dstintfrole">^wan$</field>
+    <field name="logid" negate="yes">^0000000020$</field>
+    <field name="sentbyte" type="pcre2">^\d{9,}$</field>
+    <description>FortiGate: large upload (100 MB+) from $(srcip) to $(dstip) ($(sentbyte) bytes).</description>
+    <group>large_transfer,</group>
+  </rule>
+
+  <rule id="100505" level="5">
+    <if_sid>81618</if_sid>
+    <field name="dstintfrole">^wan$</field>
+    <field name="logid" negate="yes">^0000000020$</field>
+    <field name="rcvdbyte" type="pcre2">^\d{9,}$</field>
+    <description>FortiGate: large download (100 MB+) to $(srcip) from $(dstip) ($(rcvdbyte) bytes).</description>
+    <group>large_transfer,</group>
+  </rule>
 </group>
