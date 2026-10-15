@@ -8,8 +8,15 @@ grafana_secrets_version: 1
 # Placement : épinglé car le volume (plugins) est local à ce nœud
 grafana_node: swarm-mgr01
 
-# Port public (reseau ingress Swarm) - HTTP en attendant l'étape HTTPS
-grafana_http_port: 3000
+# Port public HTTPS (reseau ingress Swarm)
+grafana_https_port: 3000
+
+# Adresse publique de Grafana (liens, redirections, notifications d'alertes)
+grafana_root_url: "https://172.27.248.110:{{ grafana_https_port }}/"
+
+# HTTPS : certificat de la CA interne (secrets Swarm créés hors Ansible)
+grafana_tls_cert_secret: infra_tls_crt_20290113
+grafana_tls_key_secret: infra_tls_key_20290113
 
 # Base de données
 grafana_db_host: ""

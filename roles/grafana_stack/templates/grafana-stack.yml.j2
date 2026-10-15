@@ -13,16 +13,28 @@ services:
       GF_DATABASE_USER: "{{ grafana_db_user }}"
       GF_DATABASE_PASSWORD__FILE: /run/secrets/grafana_db_password
       GF_DATABASE_SSL_MODE: disable
+      GF_SERVER_PROTOCOL: https
+      GF_SERVER_CERT_FILE: /run/secrets/grafana_tls_crt
+      GF_SERVER_CERT_KEY: /run/secrets/grafana_tls_key
+      GF_SERVER_ROOT_URL: "{{ grafana_root_url }}"
     secrets:
       - source: grafana_admin_password
         target: grafana_admin_password
       - source: grafana_db_password
         target: grafana_db_password
+      - source: grafana_tls_crt
+        target: grafana_tls_crt
+        mode: 0444
+      - source: grafana_tls_key
+        target: grafana_tls_key
+        uid: "472"
+        gid: "0"
+        mode: 0400
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
       - target: 3000
-        published: {{ grafana_http_port }}
+        published: {{ grafana_https_port }}
         protocol: tcp
         mode: ingress
     deploy:
@@ -47,4 +59,9 @@ secrets:
   grafana_db_password:
     external: true
     name: "grafana_db_password_v{{ grafana_secrets_version }}"
-
+  grafana_tls_crt:
+    external: true
+    name: "{{ grafana_tls_cert_secret }}"
+  grafana_tls_key:
+    external: true
+    name: "{{ grafana_tls_key_secret }}"
