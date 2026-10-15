@@ -44,6 +44,12 @@
     label: "{{ item.name }}_v{{ jumpserver_secrets_version }}"
   no_log: true
 
+- name: Créer la config Docker nginx HTTPS du service web
+  community.docker.docker_config:
+    name: "jms_web_https_conf_v{{ jumpserver_web_https_conf_version }}"
+    data: "{{ lookup('ansible.builtin.template', 'https_server.conf.j2') }}"
+    state: present
+
 - name: Controler que le fichier de stack se genere (affiche uniquement les services)
   ansible.builtin.debug:
     msg: "{{ (lookup('ansible.builtin.template', 'jumpserver-stack.yml.j2') | from_yaml).services.keys() | list }}"
@@ -86,4 +92,5 @@
     compose:
       - "{{ lookup('ansible.builtin.template', 'jumpserver-stack.yml.j2') | from_yaml }}"
     state: present
+    resolve_image: changed
   no_log: true

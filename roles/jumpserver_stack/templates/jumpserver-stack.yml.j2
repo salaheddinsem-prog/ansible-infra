@@ -60,11 +60,28 @@ services:
 
   web:
     image: "jumpserver/web:{{ jumpserver_version }}"
+    environment:
+      HTTPS_PORT: "{{ jumpserver_https_port }}"
     volumes:
       - "{{ jumpserver_data_root }}/core:/opt/jumpserver/data"
+    configs:
+      - source: jms_web_https_conf
+        target: /etc/nginx/sites-enabled/https_server.conf
+        mode: 0444
+    secrets:
+      - source: jms_tls_crt
+        target: /etc/nginx/cert/server.crt
+        mode: 0444
+      - source: jms_tls_key
+        target: /etc/nginx/cert/server.key
+        mode: 0400
     ports:
       - target: 80
         published: {{ jumpserver_http_port }}
+        protocol: tcp
+        mode: ingress
+      - target: 443
+        published: {{ jumpserver_https_port }}
         protocol: tcp
         mode: ingress
     networks: [jms]
@@ -126,6 +143,11 @@ networks:
   jms:
     driver: overlay
 
+configs:
+  jms_web_https_conf:
+    external: true
+    name: "jms_web_https_conf_v{{ jumpserver_web_https_conf_version }}"
+
 secrets:
   jms_core_config:
     external: true
@@ -133,3 +155,9 @@ secrets:
   jms_redis_config:
     external: true
     name: "jms_redis_config_v{{ jumpserver_secrets_version }}"
+  jms_tls_crt:
+    external: true
+    name: "{{ jumpserver_tls_cert_secret }}"
+  jms_tls_key:
+    external: true
+    name: "{{ jumpserver_tls_key_secret }}"

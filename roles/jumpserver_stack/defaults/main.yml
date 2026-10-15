@@ -14,6 +14,13 @@ jumpserver_data_root: /srv/jms
 # Ports publics (reseau ingress Swarm)
 jumpserver_http_port: 8082
 jumpserver_ssh_port: 2222
+jumpserver_https_port: 8444
+
+# HTTPS du service web : certificat de la CA interne (secrets Swarm crees hors Ansible)
+jumpserver_tls_cert_secret: infra_tls_crt_20290113
+jumpserver_tls_key_secret: infra_tls_key_20290113
+# Incrementer pour publier un nouveau contenu de config nginx (une config Docker est immuable)
+jumpserver_web_https_conf_version: 1
 
 # Base de donnes
 jumpserver_db_host: ""
