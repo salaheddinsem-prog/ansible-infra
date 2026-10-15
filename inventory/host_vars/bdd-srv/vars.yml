@@ -7,3 +7,8 @@ postgresql_app_dbs:
       - 172.27.248.110   # swarm-mgr01
       - 172.27.248.111   # swarm-wrk01
       - 172.27.248.112   # swarm-wrk02
+  - name: grafana
+    owner: grafana
+    password: "{{ vault_grafana_db_password }}"
+    allowed_hosts:
+      - 172.27.248.110   # swarm-mgr01 (Grafana epingle sur ce noeud)
