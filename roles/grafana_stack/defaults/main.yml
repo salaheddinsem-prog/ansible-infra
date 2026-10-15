@@ -1,0 +1,22 @@
+---
+grafana_version: "13.2.4"
+grafana_stack_name: grafana
+
+# Incrementer pour publier un nouveau contenu de secret (un secret Docker est immuable)
+grafana_secrets_version: 1
+
+# Placement : épinglé car le volume (plugins) est local à ce nœud
+grafana_node: swarm-mgr01
+
+# Port public (reseau ingress Swarm) - HTTP en attendant l'étape HTTPS
+grafana_http_port: 3000
+
+# Base de données
+grafana_db_host: ""
+grafana_db_port: 5432
+grafana_db_name: grafana
+grafana_db_user: grafana
+
+# Secrets propres à l'environnement : à définir dans l'inventaire
+grafana_db_password: ""
+grafana_admin_password: ""

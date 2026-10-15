@@ -1,0 +1,5 @@
+---
+- name: Deploiement de la stack Grafana sur Swarm
+  hosts: swarm-mgr01
+  roles:
+    - grafana_stack

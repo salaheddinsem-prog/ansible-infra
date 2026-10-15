@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  grafana:
+    image: "grafana/grafana:{{ grafana_version }}"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: "{{ grafana_db_host }}:{{ grafana_db_port }}"
+      GF_DATABASE_NAME: "{{ grafana_db_name }}"
+      GF_DATABASE_USER: "{{ grafana_db_user }}"
+      GF_DATABASE_PASSWORD__FILE: /run/secrets/grafana_db_password
+      GF_DATABASE_SSL_MODE: disable
+    secrets:
+      - source: grafana_admin_password
+        target: grafana_admin_password
+      - source: grafana_db_password
+        target: grafana_db_password
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - target: 3000
+        published: {{ grafana_http_port }}
+        protocol: tcp
+        mode: ingress
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == {{ grafana_node }}
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1G
+
+volumes:
+  grafana_data:
+    driver: local
+
+secrets:
+  grafana_admin_password:
+    external: true
+    name: "grafana_admin_password_v{{ grafana_secrets_version }}"
+  grafana_db_password:
+    external: true
+    name: "grafana_db_password_v{{ grafana_secrets_version }}"
+

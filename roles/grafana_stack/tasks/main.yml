@@ -1,0 +1,69 @@
+---
+- name: Vérifier que les paramètres obligatoires sont définis
+  ansible.builtin.assert:
+    that:
+      - grafana_db_host | length > 0
+      - grafana_db_password | length > 0
+      - grafana_admin_password | length > 0
+    quiet: true
+  no_log: true
+
+- name: Installer les bibliothèques Python requises par community.docker
+  ansible.builtin.apt:
+    name:
+      - python3-docker
+      - python3-jsondiff
+    state: present
+
+- name: Créer les Docker secrets depuis Vault
+  community.docker.docker_secret:
+    name: "{{ item.name }}_v{{ grafana_secrets_version }}"
+    data: "{{ item.value }}"
+    state: present
+  loop:
+    - { name: grafana_admin_password, value: "{{ grafana_admin_password }}" }
+    - { name: grafana_db_password, value: "{{ grafana_db_password }}" }
+  loop_control:
+    label: "{{ item.name }}_v{{ grafana_secrets_version }}"
+  no_log: true
+
+- name: Valider la stack avec la CLI Docker (exécuté aussi en --check)
+  block:
+    - name: Créer un fichier temporaire pour la stack rendue
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .grafana-stack.yml
+      register: grafana_stack_tmp
+      check_mode: false
+      changed_when: false
+
+    - name: Rendre la stack dans le fichier temporaire
+      ansible.builtin.template:
+        src: grafana-stack.yml.j2
+        dest: "{{ grafana_stack_tmp.path }}"
+        mode: "0600"
+      check_mode: false
+      changed_when: false
+
+    - name: Faire valider la stack par docker stack config
+      ansible.builtin.shell:
+        cmd: docker stack config -c {{ grafana_stack_tmp.path }} > /dev/null
+      changed_when: false
+      check_mode: false
+
+  always:
+    - name: Supprimer le fichier temporaire
+      ansible.builtin.file:
+        path: "{{ grafana_stack_tmp.path }}"
+        state: absent
+      check_mode: false
+      changed_when: false
+      when: grafana_stack_tmp.path is defined
+
+- name: Deployer la stack
+  community.docker.docker_stack:
+    name: "{{ grafana_stack_name }}"
+    compose:
+      - "{{ lookup('ansible.builtin.template', 'grafana-stack.yml.j2') | from_yaml }}"
+    state: present
+    resolve_image: changed
