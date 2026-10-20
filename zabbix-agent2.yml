@@ -1,5 +1,5 @@
 - name: Agent Zabbix 2 (mode passif)
-  hosts: databases:windows:swarm
+  hosts: databases:windows:swarm:hyperviseurs
   become: true
   roles:
     - zabbix_agent2
