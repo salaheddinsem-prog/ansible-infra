@@ -1,0 +1,21 @@
+- name: Compte d'automatisation Ansible (admin) sur bdd-srv
+  hosts: databases
+  become: true
+  tasks:
+    - name: Sauvegarder authorized_keys avant modification
+      ansible.builtin.copy:
+        src: /home/admin/.ssh/authorized_keys
+        dest: /home/admin/.ssh/authorized_keys.bak-20261021
+        remote_src: true
+        force: false          # ne rcrase jamais une sauvegarde existante
+        owner: admin
+        group: admin
+        mode: "0600"
+
+    - name: Seule la cle de CT100, limite son IP
+      ansible.posix.authorized_key:
+        user: admin
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXEMPLEexampleEXAMPLEexampleEXAMPLEexample00 root@CT100"
+        key_options: 'from="172.27.248.114"'
+        exclusive: true       # retire toute autre ligne du fichier
+        state: present
