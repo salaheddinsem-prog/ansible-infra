@@ -1,7 +1,7 @@
 - name: Creer le groupe principal avec un GID fixe
   ansible.builtin.group:
     name: "{{ item.name }}"
-    gid: "{{ item.gid }}"
+    gid: "{{ item.gid if admin_users_enforce_ids else omit }}" 
   loop: "{{ admin_users }}"
   loop_control:
     label: "{{ item.name }}"
@@ -9,13 +9,13 @@
 - name: Crer les comptes administrateurs
   ansible.builtin.user:
     name: "{{ item.name }}"
-    uid: "{{ item.uid }}"
+    uid: "{{ item.uid if admin_users_enforce_ids else omit }}" 
     group: "{{ item.name }}"
     groups: sudo
     append: true
     shell: /bin/bash
     create_home: true
-    password: "{{ lookup('ansible.builtin.vars', item.name ~ '_password_hash') }}"
+    password: "{{ lookup('ansible.builtin.vars', item.name ~ '_password_hash', default=omit) }}"
     update_password: on_create
   loop: "{{ admin_users }}"
   loop_control:
