@@ -1,7 +1,7 @@
 - name: Creer le groupe principal avec un GID fixe
   ansible.builtin.group:
     name: "{{ item.name }}"
-    gid: "{{ item.gid if admin_users_enforce_ids else omit }}" 
+    gid: "{{ item.gid if admin_users_enforce_ids else omit }}"
   loop: "{{ admin_users }}"
   loop_control:
     label: "{{ item.name }}"
@@ -9,7 +9,7 @@
 - name: Crer les comptes administrateurs
   ansible.builtin.user:
     name: "{{ item.name }}"
-    uid: "{{ item.uid if admin_users_enforce_ids else omit }}" 
+    uid: "{{ item.uid if admin_users_enforce_ids else omit }}"
     group: "{{ item.name }}"
     groups: sudo
     append: true

@@ -1,5 +1,5 @@
 - name: Comptes administrateurs nominatifs
-  hosts: swarm
+  hosts: swarm:databases
   become: true
   roles:
     - admin_users

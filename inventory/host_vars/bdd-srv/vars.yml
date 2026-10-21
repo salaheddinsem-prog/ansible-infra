@@ -1,4 +1,5 @@
 ---
+admin_users_enforce_ids: false
 postgresql_app_dbs:
   - name: jumpserver
     owner: jumpserver
