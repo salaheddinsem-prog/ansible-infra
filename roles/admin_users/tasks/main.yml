@@ -1,0 +1,33 @@
+- name: Creer le groupe principal avec un GID fixe
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    gid: "{{ item.gid }}"
+  loop: "{{ admin_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Crer les comptes administrateurs
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    uid: "{{ item.uid }}"
+    group: "{{ item.name }}"
+    groups: sudo
+    append: true
+    shell: /bin/bash
+    create_home: true
+    password: "{{ lookup('ansible.builtin.vars', item.name ~ '_password_hash') }}"
+    update_password: on_create
+  loop: "{{ admin_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Deployer la cle SSH de chaque compte
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.ssh_key }}"
+    state: present
+    exclusive: false
+    manage_dir: true
+  loop: "{{ admin_users }}"
+  loop_control:
+    label: "{{ item.name }}"
