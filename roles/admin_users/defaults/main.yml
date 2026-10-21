@@ -1,12 +1,7 @@
+admin_users_enforce_ids: true
 admin_users:
 #Salaheddin :
   - name: salah
     uid: 1002
     gid: 1002
     ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqesmfEh6Ub+q1nBR+t67oYFIXuMceV5T5Z5PDNVdZw admin@workstation"
-#Achraf : 
-#  - name: adminuser
- #   uid: 1003
-  #  gid: 1003
-   # password_hash: "{{ adminuser_password_hash }}"
-    #ssh_key:"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCp0PosG6T2mm9JxiV0ZsWRRiFW8G9Yd0FB+JIELRMW025J0A7YMupeMxMuACLh7lXsXldUvIiknNdRHwo7FJRX5nriJWKSjgFw5j9uX/BmXb3AgEpLikgS2U2SjpRYpPhGcrFeTUd3Z9H/NG9QN5nQbdk4cXKyf0KI0i24gEmuRuLNF19A0dOsmUGkwNyshJ8StMPu4c4meGVBdZyRqf9ZDbcA+SLeLmp5wLJRQfI8RpskaYu+exWDsTtbubm4llrIVZflMNqxKmZpv12t3a86OvpCkSEFE4iNsODAJbXBMhXMDp9+K7kneuVm1O9uxb11/vVlAjSlxafEbrsIAue7g7Af084QzHOCw/WqmnX3eGmDo6K0pS46vEEzztX7FKGDIdwPj+XS/r6Aqje8htbazPT1V0wRkobUbCx1tikjHf+qEGEgpcPfTzquDeJpAZjLvIBzXVmkRib6iboifEGsZgb3ReyTMOF9tucjVyQ+VuXv0nuk3l77zlkYDRS7kDLwavzKJZ2WM8J7FXMGrWuchtUenuAUOIUMma1rnXekheqzB5ZI+8I74DLmeQHyvpMHxHrgIGG02qPbCEmw9Qxlh+bK07DSPyIRJ2zc8r4A4ypyCoINN3veZVy1QZIB3dfeYy69des9pwhU68nSWARJIx34CYPCCXqzN7y3CBC7Gw== localadmin@Achraf-Belasri"
