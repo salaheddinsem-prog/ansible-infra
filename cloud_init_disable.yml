@@ -1,0 +1,11 @@
+- name: Desactiver Cloud-Init apres l'amorcage
+  hosts: swarm:databases
+  become: true
+  tasks:
+    - name: Empecher Cloud-Init de s'executer au demarrage
+      ansible.builtin.copy:
+        dest: /etc/cloud/cloud-init.disabled
+        content: "Desactiv par Ansible : la configuration est gerer par ansible-infra.\n"
+        owner: root
+        group: root
+        mode: "0644"
