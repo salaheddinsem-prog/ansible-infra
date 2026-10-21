@@ -3,7 +3,7 @@
 flush ruleset
 
 define ADMIN_NET    = { 172.27.248.100, 172.27.248.190, 172.27.248.195 }   # .100 = VPN via NAT FortiGate, .190 = VPN, .195 = poste bureau
-define ANSIBLE_CTRL = { 172.27.248.114 }                # CT100 — contrôleur Ansible
+define ANSIBLE_CTRL = { 172.27.248.114 }                # maestro — contrôleur Ansible
 define SWARM_NODES  = { 172.27.248.110, 172.27.248.111, 172.27.248.112 }
 
 table inet filter {

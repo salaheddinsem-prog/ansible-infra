@@ -12,7 +12,7 @@
         group: admin
         mode: "0600"
 
-    - name: Seule la cle de CT100, limite son IP
+    - name: Seule la cle de maestro, limitee a son IP
       ansible.posix.authorized_key:
         user: admin
         key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXEMPLEexampleEXAMPLEexampleEXAMPLEexample00 root@CT100"
