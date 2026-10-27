@@ -1,0 +1,7 @@
+tls_server_config:
+  cert_file: /run/secrets/prometheus_tls_crt
+  key_file: /run/secrets/prometheus_tls_key
+basic_auth_users:
+{% for user, pw_hash in prometheus_basic_auth_users.items() %}
+  {{ user }}: "{{ pw_hash }}"
+{% endfor %}

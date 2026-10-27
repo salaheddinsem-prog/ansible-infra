@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  prometheus:
+    image: "prom/prometheus:{{ prometheus_version }}"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time={{ prometheus_retention_time }}
+      - --storage.tsdb.retention.size={{ prometheus_retention_size }}
+      - --web.config.file=/run/secrets/prometheus_web_config
+      - --web.enable-remote-write-receiver
+      - --web.external-url={{ prometheus_external_url }}
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+        mode: 0444
+    secrets:
+      - source: prometheus_web_config
+        target: prometheus_web_config
+        uid: "65534"
+        gid: "65534"
+        mode: 0400
+      - source: prometheus_tls_crt
+        target: prometheus_tls_crt
+        mode: 0444
+      - source: prometheus_tls_key
+        target: prometheus_tls_key
+        uid: "65534"
+        gid: "65534"
+        mode: 0400
+    volumes:
+      - prometheus_data:/prometheus
+    ports:
+      - target: 9090
+        published: {{ prometheus_https_port }}
+        protocol: tcp
+        mode: ingress
+    stop_grace_period: 1m
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == {{ prometheus_node }}
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: {{ prometheus_memory_limit }}
+        reservations:
+          memory: {{ prometheus_memory_reservation }}
+
+volumes:
+  prometheus_data:
+    driver: local
+
+configs:
+  prometheus_config:
+    external: true
+    name: "{{ prometheus_config_name }}"
+
+secrets:
+  prometheus_web_config:
+    external: true
+    name: "{{ prometheus_web_config_name }}"
+  prometheus_tls_crt:
+    external: true
+    name: "{{ prometheus_tls_cert_secret }}"
+  prometheus_tls_key:
+    external: true
+    name: "{{ prometheus_tls_key_secret }}"

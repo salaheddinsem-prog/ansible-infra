@@ -1,0 +1,5 @@
+global:
+  scrape_interval: {{ prometheus_scrape_interval }}
+  evaluation_interval: {{ prometheus_scrape_interval }}
+
+# Aucun scrape_configs : les agents Alloy poussent leurs métriques (remote_write).

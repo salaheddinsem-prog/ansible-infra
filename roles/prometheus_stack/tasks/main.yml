@@ -1,0 +1,79 @@
+---
+- name: Vérifier que les paramètres obligatoires sont définis
+  ansible.builtin.assert:
+    that:
+      - prometheus_basic_auth_users | length > 0
+    quiet: true
+  no_log: true
+
+- name: Installer les bibliothèques Python requises par community.docker
+  ansible.builtin.apt:
+    name:
+      - python3-docker
+      - python3-jsondiff
+    state: present
+
+- name: Rendre les fichiers de configuration
+  ansible.builtin.set_fact:
+    prometheus_config_content: "{{ lookup('ansible.builtin.template', 'prometheus.yml.j2') }}"
+    prometheus_web_config_content: "{{ lookup('ansible.builtin.template', 'web-config.yml.j2') }}"
+  no_log: true
+
+- name: Nommer la config et le secret d'après le hash de leur contenu
+  ansible.builtin.set_fact:
+    prometheus_config_name: "prometheus_config_{{ (prometheus_config_content | hash('sha256'))[:10] }}"
+    prometheus_web_config_name: "prometheus_web_{{ (prometheus_web_config_content | hash('sha256'))[:10] }}"
+
+- name: Créer la config Swarm prometheus.yml
+  community.docker.docker_config:
+    name: "{{ prometheus_config_name }}"
+    data: "{{ prometheus_config_content }}"
+    state: present
+
+- name: Créer le secret Swarm web-config (TLS + comptes)
+  community.docker.docker_secret:
+    name: "{{ prometheus_web_config_name }}"
+    data: "{{ prometheus_web_config_content }}"
+    state: present
+  no_log: true
+
+- name: Valider la stack avec la CLI Docker (exécuté aussi en --check)
+  block:
+    - name: Créer un fichier temporaire pour la stack rendue
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .prometheus-stack.yml
+      register: prometheus_stack_tmp
+      check_mode: false
+      changed_when: false
+
+    - name: Rendre la stack dans le fichier temporaire
+      ansible.builtin.template:
+        src: prometheus-stack.yml.j2
+        dest: "{{ prometheus_stack_tmp.path }}"
+        mode: "0600"
+      check_mode: false
+      changed_when: false
+
+    - name: Faire valider la stack par docker stack config
+      ansible.builtin.shell:
+        cmd: docker stack config -c {{ prometheus_stack_tmp.path }} > /dev/null
+      changed_when: false
+      check_mode: false
+
+  always:
+    - name: Supprimer le fichier temporaire
+      ansible.builtin.file:
+        path: "{{ prometheus_stack_tmp.path }}"
+        state: absent
+      check_mode: false
+      changed_when: false
+      when: prometheus_stack_tmp.path is defined
+
+- name: Déployer la stack
+  community.docker.docker_stack:
+    name: "{{ prometheus_stack_name }}"
+    compose:
+      - "{{ lookup('ansible.builtin.template', 'prometheus-stack.yml.j2') | from_yaml }}"
+    state: present
+    resolve_image: changed

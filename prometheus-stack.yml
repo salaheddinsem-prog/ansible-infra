@@ -1,0 +1,5 @@
+---
+- name: Deploiement de la stack Prometheus sur Swarm
+  hosts: swarm-mgr01
+  roles:
+    - prometheus_stack

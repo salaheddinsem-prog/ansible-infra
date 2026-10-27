@@ -1,0 +1,28 @@
+---
+# LTS 3.13 (support d'un an) ; vérifier les correctifs sur
+# https://github.com/prometheus/prometheus/releases
+prometheus_version: "v3.13.5"
+prometheus_stack_name: prometheus
+
+# Placement : épinglé car la TSDB est sur un volume local (jamais sur NFS)
+prometheus_node: swarm-wrk01
+
+prometheus_https_port: 9090
+prometheus_external_url: "https://172.27.248.111:{{ prometheus_https_port }}/"
+
+# Rétention : la première limite atteinte s'applique
+prometheus_retention_time: 30d
+prometheus_retention_size: 5GB
+
+# wrk01 partage sa RAM avec l'indexer Wazuh
+prometheus_memory_limit: 1G
+prometheus_memory_reservation: 512M
+
+prometheus_scrape_interval: 15s
+
+# HTTPS : certificat de la CA interne (secrets Swarm créés hors Ansible)
+prometheus_tls_cert_secret: infra_tls_crt_20290113
+prometheus_tls_key_secret: infra_tls_key_20290113
+
+# Comptes d'accès {nom: hash bcrypt} : à définir dans l'inventaire
+prometheus_basic_auth_users: {}
