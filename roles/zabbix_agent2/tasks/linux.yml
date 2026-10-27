@@ -39,3 +39,24 @@
     name: zabbix-agent2
     state: started
     enabled: true
+
+- name: Déployer les UserParameter personnalisés
+  ansible.builtin.copy:
+    dest: /etc/zabbix/zabbix_agent2.d/userparameters.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Géré par Ansible (rôle zabbix_agent2) - ne pas modifier à la main
+      {% for up in zabbix_agent2_userparameters %}
+      UserParameter={{ up.key }},{{ up.command }}
+      {% endfor %}
+  when: zabbix_agent2_userparameters | length > 0
+  notify: Redémarrer zabbix-agent2
+
+- name: Supprimer les UserParameter si aucun n'est défini
+  ansible.builtin.file:
+    path: /etc/zabbix/zabbix_agent2.d/userparameters.conf
+    state: absent
+  when: zabbix_agent2_userparameters | length == 0
+  notify: Redémarrer zabbix-agent2

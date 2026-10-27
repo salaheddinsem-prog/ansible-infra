@@ -10,3 +10,7 @@ zabbix_agent2_extra_servers: []
 # Sources autorisées : IP des nœuds Swarm (SNAT docker_gwbridge pour les hôtes externes)
 # + sources supplémentaires éventuelles
 zabbix_agent2_servers: "{{ (groups['swarm'] | map('extract', hostvars, 'ansible_host') | list + zabbix_agent2_extra_servers) | join(',') }}"
+
+# UserParameter personnalisés (vide par défaut).
+# Chaque élément : { key: "nom.de.la.cle", command: "commande à exécuter" }
+zabbix_agent2_userparameters: []

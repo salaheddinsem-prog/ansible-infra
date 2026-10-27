@@ -1,0 +1,5 @@
+# Supervision de l'etat des pools ZFS de l'hyperviseur.
+# "zpool status -x" renvoie exactement "all pools are healthy" si tout va bien.
+zabbix_agent2_userparameters:
+  - key: zfs.pool.status
+    command: /usr/sbin/zpool status -x
