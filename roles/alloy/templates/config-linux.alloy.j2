@@ -1,0 +1,38 @@
+// Géré par Ansible (rôle alloy) : ne pas modifier à la main
+
+prometheus.exporter.unix "host" { }
+
+discovery.relabel "host" {
+  targets = prometheus.exporter.unix.host.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = "{{ inventory_hostname }}"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "node"
+  }
+}
+
+prometheus.scrape "host" {
+  targets         = discovery.relabel.host.output
+  scrape_interval = "{{ alloy_scrape_interval }}"
+  forward_to      = [prometheus.remote_write.prometheus.receiver]
+}
+
+prometheus.remote_write "prometheus" {
+  endpoint {
+    url = "{{ alloy_prometheus_url }}"
+
+    basic_auth {
+      username      = "{{ alloy_prometheus_user }}"
+      password_file = "/etc/alloy/prometheus_password"
+    }
+
+    tls_config {
+      ca_file = "{{ alloy_ca_file_linux }}"
+    }
+  }
+}

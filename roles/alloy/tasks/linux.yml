@@ -1,0 +1,52 @@
+---
+- name: Prérequis du module deb822_repository
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present
+
+- name: Dépôt APT Grafana (signature vérifiée)
+  ansible.builtin.deb822_repository:
+    name: grafana
+    types: deb
+    uris: https://apt.grafana.com
+    suites: stable
+    components: main
+    signed_by: https://apt.grafana.com/gpg.key
+
+- name: Installer Alloy (version épinglée)
+  ansible.builtin.apt:
+    name: "alloy={{ alloy_version }}*"
+    update_cache: true
+    allow_change_held_packages: true
+  notify: Redémarrer alloy (Linux)
+
+- name: Bloquer les mises à jour non maîtrisées
+  ansible.builtin.dpkg_selections:
+    name: alloy
+    selection: hold
+
+- name: Mot de passe d'envoi vers Prometheus
+  ansible.builtin.copy:
+    content: "{{ alloy_prometheus_password }}"
+    dest: /etc/alloy/prometheus_password
+    owner: root
+    group: alloy
+    mode: "0640"
+  no_log: true
+  notify: Redémarrer alloy (Linux)
+
+- name: Configuration Alloy
+  ansible.builtin.template:
+    src: config-linux.alloy.j2
+    dest: /etc/alloy/config.alloy
+    owner: root
+    group: alloy
+    mode: "0640"
+    validate: /usr/bin/alloy fmt %s
+  notify: Redémarrer alloy (Linux)
+
+- name: Activer et démarrer Alloy
+  ansible.builtin.systemd_service:
+    name: alloy
+    enabled: true
+    state: started

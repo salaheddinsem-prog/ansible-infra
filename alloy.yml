@@ -1,0 +1,6 @@
+---
+- name: Agents Grafana Alloy
+  hosts: swarm:databases:windows
+  become: true
+  roles:
+    - alloy

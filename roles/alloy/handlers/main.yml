@@ -1,0 +1,10 @@
+---
+- name: Redémarrer alloy (Linux)
+  ansible.builtin.systemd_service:
+    name: alloy
+    state: restarted
+
+- name: Redémarrer alloy (Windows)
+  ansible.windows.win_service:
+    name: "{{ alloy_windows_service }}"
+    state: restarted

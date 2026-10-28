@@ -1,0 +1,17 @@
+---
+# Version épinglée (sans le "v") : https://github.com/grafana/alloy/releases
+alloy_version: "1.21.2"
+
+alloy_prometheus_url: "https://172.27.248.111:9090/api/v1/write"
+alloy_prometheus_user: alloy
+alloy_prometheus_password: "{{ vault_prometheus_alloy_password }}"
+alloy_scrape_interval: 15s
+
+# Racine CA déposée par le rôle ca_trust
+alloy_ca_file_linux: /usr/local/share/ca-certificates/infra-ops-ca.crt
+alloy_ca_file_windows: C:/ProgramData/Infra-ops/infra-ops-ca.crt
+
+# Windows : chemins et service par défaut de l'installeur (vérifiés par le rôle)
+alloy_windows_install_dir: 'C:\Program Files\GrafanaLabs\Alloy'
+alloy_windows_service: Alloy
+alloy_windows_data_dir: 'C:\ProgramData\Infra-ops'

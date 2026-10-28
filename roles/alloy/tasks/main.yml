@@ -1,0 +1,16 @@
+---
+- name: Vérifier que les paramètres obligatoires sont définis
+  ansible.builtin.assert:
+    that:
+      - alloy_version | length > 0
+      - alloy_prometheus_password | length > 0
+    quiet: true
+  no_log: true
+
+- name: Installer Alloy (Linux)
+  ansible.builtin.include_tasks: linux.yml
+  when: ansible_facts['os_family'] != 'Windows'
+
+- name: Installer Alloy (Windows)
+  ansible.builtin.include_tasks: windows.yml
+  when: ansible_facts['os_family'] == 'Windows'
