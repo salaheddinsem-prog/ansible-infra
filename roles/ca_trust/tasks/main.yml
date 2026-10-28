@@ -1,0 +1,8 @@
+---
+- name: Installer la racine (Linux)
+  ansible.builtin.include_tasks: linux.yml
+  when: ansible_facts['os_family'] != 'Windows'
+
+- name: Installer la racine (Windows)
+  ansible.builtin.include_tasks: windows.yml
+  when: ansible_facts['os_family'] == 'Windows'

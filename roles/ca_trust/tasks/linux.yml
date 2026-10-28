@@ -1,0 +1,12 @@
+---
+- name: Copier la racine dans le magasin local
+  ansible.builtin.copy:
+    src: "{{ ca_trust_src }}"
+    dest: "/usr/local/share/ca-certificates/{{ ca_trust_name }}.crt"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Mettre à jour le magasin de certificats
+
+- name: Appliquer les handlers maintenant
+  ansible.builtin.meta: flush_handlers

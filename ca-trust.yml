@@ -1,0 +1,6 @@
+---
+- name: Distribution de la racine CA interne
+  hosts: swarm:databases:windows
+  become: true
+  roles:
+    - ca_trust

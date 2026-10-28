@@ -1,0 +1,17 @@
+---
+- name: Créer le dossier local de l'infra
+  ansible.windows.win_file:
+    path: "{{ ca_trust_windows_dir }}"
+    state: directory
+
+- name: Copier la racine
+  ansible.windows.win_copy:
+    src: "{{ ca_trust_src }}"
+    dest: "{{ ca_trust_windows_dir }}\\{{ ca_trust_name }}.crt"
+
+- name: Importer dans LocalMachine\Root
+  ansible.windows.win_certificate_store:
+    path: "{{ ca_trust_windows_dir }}\\{{ ca_trust_name }}.crt"
+    store_name: Root
+    store_location: LocalMachine
+    state: present
