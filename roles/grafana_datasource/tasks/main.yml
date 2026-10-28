@@ -1,0 +1,80 @@
+---
+# Les appels portent le jeton dans un en-tête : no_log sur chaque appel,
+# puis un assert affiche le code HTTP et le message de Grafana (sans le jeton).
+
+- name: Vérifier que le jeton est défini
+  ansible.builtin.assert:
+    that: grafana_api_token | length > 0
+    quiet: true
+  no_log: true
+
+- name: Chercher la datasource existante
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/datasources/uid/{{ grafana_ds_uid }}"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    status_code: [200, 401, 403, 404]
+  register: grafana_ds_existing
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (recherche)
+  ansible.builtin.assert:
+    that: grafana_ds_existing.status in [200, 404]
+    fail_msg: "Grafana a répondu {{ grafana_ds_existing.status }} : {{ grafana_ds_existing.json.message | default('') }}"
+    quiet: true
+
+- name: Préparer la définition de la datasource
+  ansible.builtin.set_fact:
+    grafana_ds_body:
+      name: "{{ grafana_ds_name }}"
+      uid: "{{ grafana_ds_uid }}"
+      type: prometheus
+      access: proxy
+      url: "{{ grafana_ds_url }}"
+      isDefault: true
+      basicAuth: true
+      basicAuthUser: "{{ grafana_ds_user }}"
+      jsonData:
+        tlsAuthWithCACert: true
+        httpMethod: POST
+        prometheusType: Prometheus
+      secureJsonData:
+        basicAuthPassword: "{{ grafana_ds_password }}"
+        tlsCACert: "{{ lookup('ansible.builtin.file', grafana_ds_ca_src) }}"
+  no_log: true
+
+- name: Créer ou mettre à jour la datasource
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/datasources{{ '' if grafana_ds_existing.status == 404 else '/uid/' ~ grafana_ds_uid }}"
+    method: "{{ 'POST' if grafana_ds_existing.status == 404 else 'PUT' }}"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    body: "{{ grafana_ds_body }}"
+    body_format: json
+    status_code: [200, 400, 401, 403, 409]
+  register: grafana_ds_write
+  when: grafana_ds_existing.status == 404 or grafana_ds_force_update | bool
+  changed_when: grafana_ds_write.status == 200
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (écriture)
+  ansible.builtin.assert:
+    that: grafana_ds_write.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_ds_write.status }} : {{ grafana_ds_write.json.message | default('') }}"
+    quiet: true
+  when: grafana_ds_write is not skipped
+
+- name: Tester la connexion Grafana vers Prometheus
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/datasources/uid/{{ grafana_ds_uid }}/health"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    status_code: [200, 400, 401, 403, 404, 500]
+  register: grafana_ds_health
+  no_log: true
+
+- name: Résultat du test
+  ansible.builtin.assert:
+    that: grafana_ds_health.status == 200
+    success_msg: "{{ grafana_ds_health.json.status | default('') }} - {{ grafana_ds_health.json.message | default('') }}"
+    fail_msg: "Test en échec ({{ grafana_ds_health.status }}) : {{ grafana_ds_health.json.message | default('') }}"

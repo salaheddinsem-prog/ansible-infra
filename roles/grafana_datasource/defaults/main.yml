@@ -1,0 +1,15 @@
+---
+grafana_api_url: "https://172.27.248.110:3000"
+
+# Jeton du compte de service Grafana "ansible" (rôle Admin), dans le Vault
+grafana_api_token: "{{ vault_grafana_sa_token }}"
+
+grafana_ds_uid: prometheus-infra
+grafana_ds_name: Prometheus
+grafana_ds_url: "https://172.27.248.111:9090"
+grafana_ds_user: grafana
+grafana_ds_password: "{{ vault_prometheus_grafana_password }}"
+grafana_ds_ca_src: /root/ca-interne/ca/ca-v2.crt
+
+# Passer à true pour réécrire une datasource existante
+grafana_ds_force_update: false
