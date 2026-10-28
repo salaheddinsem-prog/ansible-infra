@@ -1,0 +1,6 @@
+---
+# Chaîne complète de supervision, dans l'ordre des dépendances
+- import_playbook: prometheus-stack.yml
+- import_playbook: ca-trust.yml
+- import_playbook: grafana-datasource.yml
+- import_playbook: alloy.yml

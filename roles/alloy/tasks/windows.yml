@@ -1,0 +1,77 @@
+---
+- name: Dossiers de travail
+  ansible.windows.win_file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - 'C:\Windows\Temp\alloy'
+    - "{{ alloy_windows_data_dir }}"
+
+- name: Télécharger l'installeur Alloy
+  ansible.windows.win_get_url:
+    url: "https://github.com/grafana/alloy/releases/download/v{{ alloy_version }}/alloy-installer-windows-amd64.exe.zip"
+    dest: 'C:\Windows\Temp\alloy\alloy-{{ alloy_version }}.zip'
+
+- name: Extraire l'installeur
+  ansible.windows.win_shell: >-
+    Expand-Archive -Force
+    -Path 'C:\Windows\Temp\alloy\alloy-{{ alloy_version }}.zip'
+    -DestinationPath 'C:\Windows\Temp\alloy\{{ alloy_version }}'
+  args:
+    creates: 'C:\Windows\Temp\alloy\{{ alloy_version }}\alloy-installer-windows-amd64.exe'
+
+- name: Installer Alloy en silencieux
+  ansible.windows.win_package:
+    path: 'C:\Windows\Temp\alloy\{{ alloy_version }}\alloy-installer-windows-amd64.exe'
+    arguments: /S
+    creates_service: "{{ alloy_windows_service }}"
+
+- name: Vérifier que le service attendu existe
+  ansible.windows.win_service_info:
+    name: "{{ alloy_windows_service }}"
+  register: alloy_win_svc
+
+- name: Échouer clairement si le service porte un autre nom
+  ansible.builtin.assert:
+    that: alloy_win_svc.exists
+    fail_msg: "Service {{ alloy_windows_service }} introuvable : vérifier avec Get-Service *alloy*"
+    quiet: true
+
+# Dossier réservé à SYSTEM et aux Administrateurs (SID : indépendants de la langue)
+- name: Droits explicites sur le dossier local
+  ansible.windows.win_acl:
+    path: "{{ alloy_windows_data_dir }}"
+    user: "{{ item }}"
+    rights: FullControl
+    type: allow
+    state: present
+    inherit: ContainerInherit, ObjectInherit
+    propagation: None
+  loop:
+    - S-1-5-18
+    - S-1-5-32-544
+
+- name: Couper l'héritage (retire la lecture aux Utilisateurs)
+  ansible.windows.win_acl_inheritance:
+    path: "{{ alloy_windows_data_dir }}"
+    state: absent
+    reorganize: false
+
+- name: Mot de passe d'envoi vers Prometheus
+  ansible.windows.win_copy:
+    content: "{{ alloy_prometheus_password }}"
+    dest: "{{ alloy_windows_data_dir }}\\prometheus_password"
+  no_log: true
+  notify: Redémarrer alloy (Windows)
+
+- name: Configuration Alloy
+  ansible.windows.win_template:
+    src: config-windows.alloy.j2
+    dest: "{{ alloy_windows_install_dir }}\\config.alloy"
+  notify: Redémarrer alloy (Windows)
+
+- name: Activer et démarrer Alloy
+  ansible.windows.win_service:
+    name: "{{ alloy_windows_service }}"
+    start_mode: auto
+    state: started
