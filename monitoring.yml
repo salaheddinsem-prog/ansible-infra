@@ -3,6 +3,7 @@
 - import_playbook: prometheus-stack.yml
 - import_playbook: ca-trust.yml
 - import_playbook: grafana-datasource.yml
+- import_playbook: grafana-zabbix-datasource.yml
 - import_playbook: alloy.yml
 - import_playbook: grafana-dashboards.yml
 - import_playbook: grafana-alerting.yml
