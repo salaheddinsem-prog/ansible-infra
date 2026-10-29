@@ -24,6 +24,12 @@ grafana_db_port: 5432
 grafana_db_name: grafana
 grafana_db_user: grafana
 
+# Envoi d'emails (alertes) via le relais SMTP Google Workspace, autorisé par IP
+grafana_smtp_host: "smtp-relay.gmail.com:587"
+grafana_smtp_from_address: supervision@example.com
+grafana_smtp_from_name: Supervision Example
+grafana_smtp_ehlo_identity: example.com
+
 # Secrets propres à l'environnement : à définir dans l'inventaire
 grafana_db_password: ""
 grafana_admin_password: ""

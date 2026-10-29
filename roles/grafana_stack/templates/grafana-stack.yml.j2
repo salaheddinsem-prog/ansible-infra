@@ -17,6 +17,13 @@ services:
       GF_SERVER_CERT_FILE: /run/secrets/grafana_tls_crt
       GF_SERVER_CERT_KEY: /run/secrets/grafana_tls_key
       GF_SERVER_ROOT_URL: "{{ grafana_root_url }}"
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: "{{ grafana_smtp_host }}"
+      GF_SMTP_FROM_ADDRESS: "{{ grafana_smtp_from_address }}"
+      GF_SMTP_FROM_NAME: "{{ grafana_smtp_from_name }}"
+      GF_SMTP_EHLO_IDENTITY: "{{ grafana_smtp_ehlo_identity }}"
+      GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
+      GF_SMTP_SKIP_VERIFY: "false"
     secrets:
       - source: grafana_admin_password
         target: grafana_admin_password
