@@ -30,7 +30,7 @@ panels:
     title: Uptime
     gridPos: {x: 0, y: 0, w: 4, h: 4}
     datasource: {type: prometheus, uid: "${datasource}"}
-    fieldConfig: {defaults: {unit: dtdurations}, overrides: []}
+    fieldConfig: {defaults: {unit: dtdurations, color: {mode: fixed, fixedColor: text}}, overrides: []}
     targets:
       - refId: A
         expr: time() - windows_system_boot_time_timestamp{instance="$instance"}
@@ -76,7 +76,7 @@ panels:
     title: RAM totale
     gridPos: {x: 12, y: 0, w: 4, h: 4}
     datasource: {type: prometheus, uid: "${datasource}"}
-    fieldConfig: {defaults: {unit: bytes}, overrides: []}
+    fieldConfig: {defaults: {unit: bytes, color: {mode: fixed, fixedColor: text}}, overrides: []}
     targets:
       - refId: A
         expr: windows_memory_physical_total_bytes{instance="$instance"}
@@ -96,7 +96,7 @@ panels:
     title: Décalage NTP
     gridPos: {x: 20, y: 0, w: 4, h: 4}
     datasource: {type: prometheus, uid: "${datasource}"}
-    fieldConfig: {defaults: {unit: s, decimals: 4}, overrides: []}
+    fieldConfig: {defaults: {unit: s}, overrides: []}
     targets:
       - refId: A
         expr: windows_time_computed_time_offset_seconds{instance="$instance"}
