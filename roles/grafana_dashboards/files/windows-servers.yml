@@ -216,3 +216,75 @@ panels:
         options:
           excludeByName: {Time: true, Value: true, __name__: true, instance: true, job: true, start_mode: true}
           renameByName: {name: Service}
+
+  # --- Ligne 5 : processus et détail mémoire ---
+  - id: 14
+    type: timeseries
+    title: Processus et threads
+    gridPos: {x: 0, y: 28, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig:
+      defaults: {unit: none, min: 0}
+      overrides:
+        - matcher: {id: byName, options: Threads}
+          properties: [{id: custom.axisPlacement, value: right}]
+    targets:
+      - refId: A
+        expr: windows_system_processes{instance="$instance"}
+        legendFormat: Processus
+      - refId: B
+        expr: windows_system_threads{instance="$instance"}
+        legendFormat: Threads
+
+  - id: 15
+    type: timeseries
+    title: Mémoire - détail
+    gridPos: {x: 12, y: 28, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: bytes, min: 0}, overrides: []}
+    targets:
+      - refId: A
+        expr: windows_memory_standby_cache_core_bytes{instance="$instance"} + windows_memory_standby_cache_normal_priority_bytes{instance="$instance"} + windows_memory_standby_cache_reserve_bytes{instance="$instance"}
+        legendFormat: Cache en attente (standby)
+      - refId: B
+        expr: windows_memory_cache_bytes{instance="$instance"}
+        legendFormat: Cache système
+      - refId: C
+        expr: windows_memory_pool_paged_bytes{instance="$instance"}
+        legendFormat: Pool paginé
+      - refId: D
+        expr: windows_memory_pool_nonpaged_bytes{instance="$instance"}
+        legendFormat: Pool non paginé
+      - refId: E
+        expr: windows_memory_modified_page_list_bytes{instance="$instance"}
+        legendFormat: Pages modifiées
+      - refId: F
+        expr: windows_memory_free_and_zero_page_list_bytes{instance="$instance"}
+        legendFormat: Libre
+
+  # --- Ligne 6 : pagination et file d'attente CPU ---
+  - id: 16
+    type: timeseries
+    title: Pagination (fichier d'échange)
+    gridPos: {x: 0, y: 36, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: ops, min: 0}, overrides: []}
+    targets:
+      - refId: A
+        expr: rate(windows_memory_swap_page_reads_total{instance="$instance"}[$__rate_interval])
+        legendFormat: Lectures de pages
+      - refId: B
+        expr: rate(windows_memory_swap_page_writes_total{instance="$instance"}[$__rate_interval])
+        legendFormat: Écritures de pages
+
+  - id: 17
+    type: timeseries
+    title: File d'attente processeur
+    description: Nombre de threads prêts mais en attente d'un processeur. Durablement au-dessus de 2 par processeur, le CPU est saturé.
+    gridPos: {x: 12, y: 36, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: none, min: 0}, overrides: []}
+    targets:
+      - refId: A
+        expr: windows_system_processor_queue_length{instance="$instance"}
+        legendFormat: Threads en attente
