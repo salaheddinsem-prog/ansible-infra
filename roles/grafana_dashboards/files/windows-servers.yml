@@ -1,0 +1,218 @@
+# Dashboard Windows (windows_exporter via Alloy) - maintenu dans Git, déployé par Ansible
+uid: infra-windows
+title: Windows - Serveurs
+tags: [infra, windows]
+timezone: browser
+editable: true
+schemaVersion: 39
+refresh: 1m
+time: {from: now-6h, to: now}
+
+templating:
+  list:
+    - name: datasource
+      label: Datasource
+      type: datasource
+      query: prometheus
+    - name: instance
+      label: Serveur
+      type: query
+      datasource: {type: prometheus, uid: "${datasource}"}
+      definition: label_values(up{job="windows"}, instance)
+      query: label_values(up{job="windows"}, instance)
+      refresh: 1
+      sort: 1
+
+panels:
+  # --- Ligne 1 : chiffres clés ---
+  - id: 1
+    type: stat
+    title: Uptime
+    gridPos: {x: 0, y: 0, w: 4, h: 4}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: dtdurations}, overrides: []}
+    targets:
+      - refId: A
+        expr: time() - windows_system_boot_time_timestamp{instance="$instance"}
+
+  - id: 2
+    type: stat
+    title: CPU utilisé
+    gridPos: {x: 4, y: 0, w: 4, h: 4}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig:
+      defaults:
+        unit: percent
+        min: 0
+        max: 100
+        thresholds:
+          mode: absolute
+          steps: [{color: green, value: null}, {color: orange, value: 70}, {color: red, value: 90}]
+      overrides: []
+    targets:
+      - refId: A
+        expr: 100 * (1 - avg(rate(windows_cpu_time_total{instance="$instance", mode="idle"}[$__rate_interval])))
+
+  - id: 3
+    type: stat
+    title: RAM utilisée
+    gridPos: {x: 8, y: 0, w: 4, h: 4}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig:
+      defaults:
+        unit: percent
+        min: 0
+        max: 100
+        thresholds:
+          mode: absolute
+          steps: [{color: green, value: null}, {color: orange, value: 80}, {color: red, value: 90}]
+      overrides: []
+    targets:
+      - refId: A
+        expr: 100 * (1 - windows_memory_available_bytes{instance="$instance"} / windows_memory_physical_total_bytes{instance="$instance"})
+
+  - id: 4
+    type: stat
+    title: RAM totale
+    gridPos: {x: 12, y: 0, w: 4, h: 4}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: bytes}, overrides: []}
+    targets:
+      - refId: A
+        expr: windows_memory_physical_total_bytes{instance="$instance"}
+
+  - id: 5
+    type: stat
+    title: Processeurs logiques
+    gridPos: {x: 16, y: 0, w: 4, h: 4}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: none}, overrides: []}
+    targets:
+      - refId: A
+        expr: count(windows_cpu_time_total{instance="$instance", mode="idle"})
+
+  - id: 6
+    type: stat
+    title: Décalage NTP
+    gridPos: {x: 20, y: 0, w: 4, h: 4}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: s, decimals: 4}, overrides: []}
+    targets:
+      - refId: A
+        expr: windows_time_computed_time_offset_seconds{instance="$instance"}
+
+  # --- Ligne 2 : CPU et mémoire dans le temps ---
+  - id: 7
+    type: timeseries
+    title: CPU par mode (hors idle)
+    gridPos: {x: 0, y: 4, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig:
+      defaults:
+        unit: percent
+        min: 0
+        custom: {stacking: {mode: normal}, fillOpacity: 30}
+      overrides: []
+    targets:
+      - refId: A
+        expr: 100 * avg by (mode) (rate(windows_cpu_time_total{instance="$instance", mode!="idle"}[$__rate_interval]))
+        legendFormat: "{{mode}}"
+
+  - id: 8
+    type: timeseries
+    title: Mémoire
+    gridPos: {x: 12, y: 4, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: bytes, min: 0}, overrides: []}
+    targets:
+      - refId: A
+        expr: windows_memory_physical_total_bytes{instance="$instance"}
+        legendFormat: Totale
+      - refId: B
+        expr: windows_memory_physical_total_bytes{instance="$instance"} - windows_memory_available_bytes{instance="$instance"}
+        legendFormat: Utilisée
+      - refId: C
+        expr: windows_memory_committed_bytes{instance="$instance"}
+        legendFormat: Engagée (commit)
+      - refId: D
+        expr: windows_memory_commit_limit{instance="$instance"}
+        legendFormat: Limite d'engagement
+
+  # --- Ligne 3 : disques et réseau ---
+  - id: 9
+    type: bargauge
+    title: Disques - espace utilisé
+    gridPos: {x: 0, y: 12, w: 8, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    options: {orientation: horizontal, displayMode: gradient}
+    fieldConfig:
+      defaults:
+        unit: percent
+        min: 0
+        max: 100
+        thresholds:
+          mode: absolute
+          steps: [{color: green, value: null}, {color: orange, value: 80}, {color: red, value: 90}]
+      overrides: []
+    targets:
+      - refId: A
+        instant: true
+        expr: 100 * (1 - windows_logical_disk_free_bytes{instance="$instance", volume!~"HarddiskVolume.*"} / windows_logical_disk_size_bytes{instance="$instance", volume!~"HarddiskVolume.*"})
+        legendFormat: "{{volume}}"
+
+  - id: 10
+    type: timeseries
+    title: Disques - débit
+    gridPos: {x: 8, y: 12, w: 8, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: Bps, min: 0}, overrides: []}
+    targets:
+      - refId: A
+        expr: rate(windows_logical_disk_read_bytes_total{instance="$instance", volume!~"HarddiskVolume.*"}[$__rate_interval])
+        legendFormat: "{{volume}} lecture"
+      - refId: B
+        expr: rate(windows_logical_disk_write_bytes_total{instance="$instance", volume!~"HarddiskVolume.*"}[$__rate_interval])
+        legendFormat: "{{volume}} écriture"
+
+  - id: 11
+    type: timeseries
+    title: Réseau - débit
+    gridPos: {x: 16, y: 12, w: 8, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: Bps, min: 0}, overrides: []}
+    targets:
+      - refId: A
+        expr: rate(windows_net_bytes_received_total{instance="$instance", nic!~".*(isatap|Loopback|Teredo).*"}[$__rate_interval])
+        legendFormat: "{{nic}} reçu"
+      - refId: B
+        expr: rate(windows_net_bytes_sent_total{instance="$instance", nic!~".*(isatap|Loopback|Teredo).*"}[$__rate_interval])
+        legendFormat: "{{nic}} envoyé"
+
+  # --- Ligne 4 : temps et services ---
+  - id: 12
+    type: timeseries
+    title: Décalage NTP dans le temps
+    gridPos: {x: 0, y: 20, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    fieldConfig: {defaults: {unit: s}, overrides: []}
+    targets:
+      - refId: A
+        expr: windows_time_computed_time_offset_seconds{instance="$instance"}
+        legendFormat: Décalage
+
+  - id: 13
+    type: table
+    title: Services en démarrage automatique actuellement arrêtés
+    description: Certains services à déclenchement (trigger start) peuvent apparaître ici sans être en panne.
+    gridPos: {x: 12, y: 20, w: 12, h: 8}
+    datasource: {type: prometheus, uid: "${datasource}"}
+    targets:
+      - refId: A
+        instant: true
+        format: table
+        expr: (windows_service_start_mode{instance="$instance", start_mode="auto"} == 1) and on (name) (windows_service_state{instance="$instance", state="stopped"} == 1)
+    transformations:
+      - id: organize
+        options:
+          excludeByName: {Time: true, Value: true, __name__: true, instance: true, job: true, start_mode: true}
+          renameByName: {name: Service}
