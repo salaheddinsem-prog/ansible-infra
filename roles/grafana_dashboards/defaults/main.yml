@@ -12,6 +12,7 @@ grafana_dashboards_folder_title: Infra
 grafana_dashboards:
   - node-exporter-full.json
   - windows-servers.yml
+  - proxmox-hyperviseur.yml
 
 # Passer à true pour réimporter des dashboards déjà présents
 grafana_dashboards_force: false
