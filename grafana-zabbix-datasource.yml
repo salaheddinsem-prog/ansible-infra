@@ -1,0 +1,5 @@
+---
+- name: App et datasource Zabbix dans Grafana
+  hosts: swarm-mgr01
+  roles:
+    - grafana_zabbix_datasource

@@ -1,0 +1,18 @@
+---
+# API Grafana : même compte de service "ansible" (rôle Admin) que grafana_datasource
+grafana_zbx_api_url: "https://172.27.248.110:3000"
+grafana_zbx_api_token: "{{ vault_grafana_sa_token }}"
+
+# Plugin Zabbix (installé par grafana_stack via GF_PLUGINS_PREINSTALL_SYNC)
+grafana_zbx_app_id: alexanderzobnin-zabbix-app
+
+# Datasource Zabbix
+grafana_zbx_ds_uid: zabbix-infra
+grafana_zbx_ds_name: Zabbix
+grafana_zbx_ds_url: "https://172.27.248.110:8443/api_jsonrpc.php"
+# Jeton API du compte Zabbix "grafana-api" (lecture seule), dans le Vault
+grafana_zbx_ds_api_token: "{{ vault_zabbix_grafana_api_token }}"
+grafana_zbx_ds_ca_src: /root/ca-interne/ca/ca-v2.crt
+
+# Passer à true pour réécrire une datasource existante
+grafana_zbx_ds_force_update: false

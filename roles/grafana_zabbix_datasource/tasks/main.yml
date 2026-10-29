@@ -1,0 +1,124 @@
+---
+# Même principe que grafana_datasource : no_log sur chaque appel portant un jeton,
+# puis un assert affiche le code HTTP et le message de Grafana (sans le jeton).
+
+- name: Vérifier que les jetons sont définis
+  ansible.builtin.assert:
+    that:
+      - grafana_zbx_api_token | length > 0
+      - grafana_zbx_ds_api_token | length > 0
+    quiet: true
+  no_log: true
+
+# --- 1. Activation de l'app Zabbix -------------------------------------------
+
+- name: Lire l'état de l'app Zabbix
+  ansible.builtin.uri:
+    url: "{{ grafana_zbx_api_url }}/api/plugins/{{ grafana_zbx_app_id }}/settings"
+    headers:
+      Authorization: "Bearer {{ grafana_zbx_api_token }}"
+    status_code: [200, 401, 403, 404]
+  register: grafana_zbx_app
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (app)
+  ansible.builtin.assert:
+    that: grafana_zbx_app.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_zbx_app.status }} : {{ grafana_zbx_app.json.message | default('') }}"
+    quiet: true
+
+- name: Activer l'app Zabbix
+  ansible.builtin.uri:
+    url: "{{ grafana_zbx_api_url }}/api/plugins/{{ grafana_zbx_app_id }}/settings"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ grafana_zbx_api_token }}"
+    body:
+      enabled: true
+      pinned: true
+    body_format: json
+    status_code: [200, 400, 401, 403, 404]
+  register: grafana_zbx_app_write
+  when: not (grafana_zbx_app.json.enabled | default(false) | bool)
+  changed_when: grafana_zbx_app_write.status == 200
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (activation)
+  ansible.builtin.assert:
+    that: grafana_zbx_app_write.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_zbx_app_write.status }} : {{ grafana_zbx_app_write.json.message | default('') }}"
+    quiet: true
+  when: grafana_zbx_app_write is not skipped
+
+# --- 2. Datasource Zabbix ----------------------------------------------------
+
+- name: Chercher la datasource existante
+  ansible.builtin.uri:
+    url: "{{ grafana_zbx_api_url }}/api/datasources/uid/{{ grafana_zbx_ds_uid }}"
+    headers:
+      Authorization: "Bearer {{ grafana_zbx_api_token }}"
+    status_code: [200, 401, 403, 404]
+  register: grafana_zbx_ds_existing
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (recherche)
+  ansible.builtin.assert:
+    that: grafana_zbx_ds_existing.status in [200, 404]
+    fail_msg: "Grafana a répondu {{ grafana_zbx_ds_existing.status }} : {{ grafana_zbx_ds_existing.json.message | default('') }}"
+    quiet: true
+
+- name: Préparer la définition de la datasource
+  ansible.builtin.set_fact:
+    grafana_zbx_ds_body:
+      name: "{{ grafana_zbx_ds_name }}"
+      uid: "{{ grafana_zbx_ds_uid }}"
+      type: alexanderzobnin-zabbix-datasource
+      access: proxy
+      url: "{{ grafana_zbx_ds_url }}"
+      isDefault: false
+      jsonData:
+        authType: token
+        tlsAuthWithCACert: true
+        trends: true
+        trendsFrom: 7d
+        trendsRange: 4d
+      secureJsonData:
+        apiToken: "{{ grafana_zbx_ds_api_token }}"
+        tlsCACert: "{{ lookup('ansible.builtin.file', grafana_zbx_ds_ca_src) }}"
+  no_log: true
+
+- name: Créer ou mettre à jour la datasource
+  ansible.builtin.uri:
+    url: "{{ grafana_zbx_api_url }}/api/datasources{{ '' if grafana_zbx_ds_existing.status == 404 else '/uid/' ~ grafana_zbx_ds_uid }}"
+    method: "{{ 'POST' if grafana_zbx_ds_existing.status == 404 else 'PUT' }}"
+    headers:
+      Authorization: "Bearer {{ grafana_zbx_api_token }}"
+    body: "{{ grafana_zbx_ds_body }}"
+    body_format: json
+    status_code: [200, 400, 401, 403, 409]
+  register: grafana_zbx_ds_write
+  when: grafana_zbx_ds_existing.status == 404 or grafana_zbx_ds_force_update | bool
+  changed_when: grafana_zbx_ds_write.status == 200
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (écriture)
+  ansible.builtin.assert:
+    that: grafana_zbx_ds_write.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_zbx_ds_write.status }} : {{ grafana_zbx_ds_write.json.message | default('') }}"
+    quiet: true
+  when: grafana_zbx_ds_write is not skipped
+
+- name: Tester la connexion Grafana vers Zabbix
+  ansible.builtin.uri:
+    url: "{{ grafana_zbx_api_url }}/api/datasources/uid/{{ grafana_zbx_ds_uid }}/health"
+    headers:
+      Authorization: "Bearer {{ grafana_zbx_api_token }}"
+    status_code: [200, 400, 401, 403, 404, 500]
+  register: grafana_zbx_ds_health
+  no_log: true
+
+- name: Résultat du test
+  ansible.builtin.assert:
+    that: grafana_zbx_ds_health.status == 200
+    success_msg: "{{ grafana_zbx_ds_health.json.status | default('') }} - {{ grafana_zbx_ds_health.json.message | default('') }}"
+    fail_msg: "Test en échec ({{ grafana_zbx_ds_health.status }}) : {{ grafana_zbx_ds_health.json.message | default('') }}"
