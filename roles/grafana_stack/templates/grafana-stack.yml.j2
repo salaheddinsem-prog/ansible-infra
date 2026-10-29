@@ -24,6 +24,9 @@ services:
       GF_SMTP_EHLO_IDENTITY: "{{ grafana_smtp_ehlo_identity }}"
       GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
       GF_SMTP_SKIP_VERIFY: "false"
+{% if grafana_plugins_preinstall | length > 0 %}
+      GF_PLUGINS_PREINSTALL_SYNC: "{{ grafana_plugins_preinstall | join(',') }}"
+{% endif %}
     secrets:
       - source: grafana_admin_password
         target: grafana_admin_password

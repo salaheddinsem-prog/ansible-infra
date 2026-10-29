@@ -33,3 +33,7 @@ grafana_smtp_ehlo_identity: example.com
 # Secrets propres à l'environnement : à définir dans l'inventaire
 grafana_db_password: ""
 grafana_admin_password: ""
+
+# Plugins installés au démarrage (GF_PLUGINS_PREINSTALL_SYNC), versions épinglées
+grafana_plugins_preinstall:
+  - "alexanderzobnin-zabbix-app@6.9.1"
