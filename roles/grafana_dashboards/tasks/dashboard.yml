@@ -1,0 +1,50 @@
+---
+- name: "Charger {{ grafana_dashboard_file }}"
+  ansible.builtin.set_fact:
+    grafana_dashboard: "{{ lookup('ansible.builtin.file', grafana_dashboard_file) | from_yaml }}"
+
+- name: "Vérifier que {{ grafana_dashboard_file }} a un uid fixe"
+  ansible.builtin.assert:
+    that: grafana_dashboard.uid | default('') | length > 0
+    fail_msg: "{{ grafana_dashboard_file }} n'a pas d'uid : impossible de savoir s'il est déjà présent"
+    quiet: true
+
+- name: "Chercher le dashboard {{ grafana_dashboard.title }}"
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/dashboards/uid/{{ grafana_dashboard.uid }}"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    status_code: [200, 401, 403, 404]
+  register: grafana_dashboard_existing
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (recherche)
+  ansible.builtin.assert:
+    that: grafana_dashboard_existing.status in [200, 404]
+    fail_msg: "Grafana a répondu {{ grafana_dashboard_existing.status }} : {{ grafana_dashboard_existing.json.message | default('') }}"
+    quiet: true
+
+- name: "Importer le dashboard {{ grafana_dashboard.title }}"
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/dashboards/db"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    body:
+      dashboard: "{{ grafana_dashboard | combine({'id': None}) }}"
+      folderUid: "{{ grafana_dashboards_folder_uid }}"
+      overwrite: true
+      message: "Déployé par Ansible (rôle grafana_dashboards)"
+    body_format: json
+    status_code: [200, 400, 401, 403, 404, 412]
+  register: grafana_dashboard_import
+  when: grafana_dashboard_existing.status == 404 or grafana_dashboards_force | bool
+  changed_when: grafana_dashboard_import.status == 200
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (import)
+  ansible.builtin.assert:
+    that: grafana_dashboard_import.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_dashboard_import.status }} : {{ grafana_dashboard_import.json.message | default('') }}"
+    quiet: true
+  when: grafana_dashboard_import is not skipped

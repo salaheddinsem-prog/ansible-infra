@@ -1,0 +1,50 @@
+---
+- name: Vérifier que le jeton est défini
+  ansible.builtin.assert:
+    that: grafana_api_token | length > 0
+    quiet: true
+  no_log: true
+
+- name: Chercher le dossier des dashboards
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/folders/{{ grafana_dashboards_folder_uid }}"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    status_code: [200, 401, 403, 404]
+  register: grafana_folder
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (dossier)
+  ansible.builtin.assert:
+    that: grafana_folder.status in [200, 404]
+    fail_msg: "Grafana a répondu {{ grafana_folder.status }} : {{ grafana_folder.json.message | default('') }}"
+    quiet: true
+
+- name: Créer le dossier des dashboards
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/folders"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    body:
+      uid: "{{ grafana_dashboards_folder_uid }}"
+      title: "{{ grafana_dashboards_folder_title }}"
+    body_format: json
+    status_code: [200, 400, 401, 403, 409, 412]
+  register: grafana_folder_create
+  when: grafana_folder.status == 404
+  changed_when: grafana_folder_create.status == 200
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (création du dossier)
+  ansible.builtin.assert:
+    that: grafana_folder_create.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_folder_create.status }} : {{ grafana_folder_create.json.message | default('') }}"
+    quiet: true
+  when: grafana_folder_create is not skipped
+
+- name: Importer chaque dashboard
+  ansible.builtin.include_tasks: dashboard.yml
+  loop: "{{ grafana_dashboards }}"
+  loop_control:
+    loop_var: grafana_dashboard_file

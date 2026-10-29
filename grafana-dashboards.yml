@@ -1,0 +1,5 @@
+---
+- name: Dashboards de supervision dans Grafana
+  hosts: swarm-mgr01
+  roles:
+    - grafana_dashboards

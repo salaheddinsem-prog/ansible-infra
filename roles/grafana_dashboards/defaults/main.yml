@@ -1,0 +1,16 @@
+---
+grafana_api_url: "https://172.27.248.110:3000"
+
+# Jeton du compte de service Grafana "ansible" (rôle Admin), dans le Vault
+grafana_api_token: "{{ vault_grafana_sa_token }}"
+
+# Dossier Grafana qui regroupe les dashboards de supervision
+grafana_dashboards_folder_uid: infra
+grafana_dashboards_folder_title: Infra
+
+# Fichiers JSON (ou YAML) présents dans files/ ; chacun doit avoir un uid fixe
+grafana_dashboards:
+  - node-exporter-full.json
+
+# Passer à true pour réimporter des dashboards déjà présents
+grafana_dashboards_force: false
