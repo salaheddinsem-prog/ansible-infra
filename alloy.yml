@@ -1,6 +1,6 @@
 ---
 - name: Agents Grafana Alloy
-  hosts: swarm:databases:windows
+  hosts: swarm:databases:windows:hyperviseurs
   become: true
   roles:
     - alloy
