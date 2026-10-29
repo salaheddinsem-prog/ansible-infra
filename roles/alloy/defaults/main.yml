@@ -15,3 +15,15 @@ alloy_ca_file_windows: C:/ProgramData/Infra-ops/infra-ops-ca.crt
 alloy_windows_install_dir: 'C:\Program Files\GrafanaLabs\Alloy'
 alloy_windows_service: Alloy
 alloy_windows_data_dir: 'C:\ProgramData\Infra-ops'
+
+# Collecteurs windows_exporter activés (remplace la liste par défaut d'Alloy)
+alloy_windows_collectors:
+  - cpu
+  - cpu_info
+  - logical_disk
+  - memory
+  - net
+  - os
+  - service
+  - system
+  - time

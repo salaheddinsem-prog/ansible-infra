@@ -1,6 +1,8 @@
 // Géré par Ansible (rôle alloy) : ne pas modifier à la main
 
-prometheus.exporter.windows "host" { }
+prometheus.exporter.windows "host" {
+  enabled_collectors = {{ alloy_windows_collectors | to_json }}
+}
 
 discovery.relabel "host" {
   targets = prometheus.exporter.windows.host.targets
