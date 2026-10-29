@@ -1,0 +1,25 @@
+---
+grafana_api_url: "https://172.27.248.110:3000"
+
+# Jeton du compte de service Grafana "ansible" (rôle Admin), dans le Vault
+grafana_api_token: "{{ vault_grafana_sa_token }}"
+
+# Point de contact : le groupe Google qui redistribue aux administrateurs
+grafana_alerting_contact_uid: supervision-email
+grafana_alerting_contact_name: Supervision (email)
+grafana_alerting_contact_addresses: supervision@example.com
+
+# Politique de notification (racine) : regroupement et rythme des emails
+grafana_alerting_group_by: [grafana_folder, alertname]
+grafana_alerting_group_wait: 30s
+grafana_alerting_group_interval: 5m
+grafana_alerting_repeat_interval: 4h
+
+# Règles : groupe évalué toutes les 60 s, rangé dans le dossier Infra
+grafana_alerting_folder_uid: infra
+grafana_alerting_rule_group: infrastructure
+grafana_alerting_rule_interval: 60
+grafana_alerting_rules_file: rules.yml
+
+# Passer à true (-e) pour réécrire le groupe de règles même sans changement détecté
+grafana_alerting_force: false

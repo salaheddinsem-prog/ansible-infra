@@ -1,0 +1,57 @@
+---
+# Les règles sont lues telles quelles depuis files/ : leurs annotations ({{ $labels... }})
+# sont des données pour Grafana et ne sont jamais interprétées par Ansible.
+- name: Charger les règles et y ajouter dossier, groupe et organisation
+  ansible.builtin.set_fact:
+    grafana_rules: >-
+      {{ lookup('ansible.builtin.file', grafana_alerting_rules_file) | from_yaml
+         | map('combine', {'folderUID': grafana_alerting_folder_uid,
+                           'ruleGroup': grafana_alerting_rule_group,
+                           'orgID': 1})
+         | list }}
+
+- name: Lire le groupe de règles existant
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/v1/provisioning/folder/{{ grafana_alerting_folder_uid }}/rule-groups/{{ grafana_alerting_rule_group }}"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    status_code: [200, 401, 403, 404]
+  register: grafana_group
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (lecture du groupe)
+  ansible.builtin.assert:
+    that: grafana_group.status in [200, 404]
+    fail_msg: "Grafana a répondu {{ grafana_group.status }} : {{ grafana_group.json.message | default('') }}"
+    quiet: true
+
+# Pour décider d'une réécriture, on compare uid, titre et requête de chaque règle
+- name: Comparer les règles en place et les règles attendues
+  ansible.builtin.set_fact:
+    grafana_rules_wanted: "{{ grafana_rules | map(attribute='uid') | zip(grafana_rules | map(attribute='title'), grafana_rules | map(attribute='data') | map('first') | map(attribute='model') | map(attribute='expr')) | map('join', '|') | sort }}"
+    grafana_rules_current: "{{ [] if grafana_group.status != 200 else (grafana_group.json.rules | map(attribute='uid') | zip(grafana_group.json.rules | map(attribute='title'), grafana_group.json.rules | map(attribute='data') | map('first') | map(attribute='model') | map(attribute='expr')) | map('join', '|') | sort) }}"
+
+- name: Écrire le groupe de règles
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/v1/provisioning/folder/{{ grafana_alerting_folder_uid }}/rule-groups/{{ grafana_alerting_rule_group }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    body:
+      title: "{{ grafana_alerting_rule_group }}"
+      folderUid: "{{ grafana_alerting_folder_uid }}"
+      interval: "{{ grafana_alerting_rule_interval | int }}"
+      rules: "{{ grafana_rules }}"
+    body_format: json
+    status_code: [200, 400, 401, 403, 404]
+  register: grafana_group_write
+  when: grafana_rules_wanted != grafana_rules_current or grafana_alerting_force | bool
+  changed_when: grafana_group_write.status == 200
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (écriture du groupe)
+  ansible.builtin.assert:
+    that: grafana_group_write.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_group_write.status }} : {{ grafana_group_write.json.message | default('') }}"
+    quiet: true
+  when: grafana_group_write is not skipped

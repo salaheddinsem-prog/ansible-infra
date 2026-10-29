@@ -1,0 +1,12 @@
+---
+- name: Vérifier que le jeton est défini
+  ansible.builtin.assert:
+    that: grafana_api_token | length > 0
+    quiet: true
+  no_log: true
+
+- name: Inclure le point de contact et la politique de notification
+  ansible.builtin.include_tasks: contact.yml
+
+- name: Inclure les règles d'alerte
+  ansible.builtin.include_tasks: rules.yml

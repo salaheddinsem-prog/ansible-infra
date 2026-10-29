@@ -1,0 +1,99 @@
+---
+# --- Point de contact ---
+- name: Lister les points de contact
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/v1/provisioning/contact-points"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    status_code: [200, 401, 403]
+  register: grafana_cp_list
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (points de contact)
+  ansible.builtin.assert:
+    that: grafana_cp_list.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_cp_list.status }} : {{ grafana_cp_list.json.message | default('') }}"
+    quiet: true
+
+- name: Préparer le point de contact attendu
+  ansible.builtin.set_fact:
+    grafana_cp_existing: "{{ grafana_cp_list.json | selectattr('uid', 'equalto', grafana_alerting_contact_uid) | list }}"
+    grafana_cp_body:
+      uid: "{{ grafana_alerting_contact_uid }}"
+      name: "{{ grafana_alerting_contact_name }}"
+      type: email
+      settings:
+        addresses: "{{ grafana_alerting_contact_addresses }}"
+        singleEmail: true
+      disableResolveMessage: false
+
+- name: Créer ou mettre à jour le point de contact
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/v1/provisioning/contact-points{{ '' if grafana_cp_existing | length == 0 else '/' ~ grafana_alerting_contact_uid }}"
+    method: "{{ 'POST' if grafana_cp_existing | length == 0 else 'PUT' }}"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    body: "{{ grafana_cp_body }}"
+    body_format: json
+    status_code: [200, 202, 400, 401, 403, 404]
+  register: grafana_cp_write
+  when: >-
+    grafana_cp_existing | length == 0
+    or grafana_cp_existing[0].name != grafana_alerting_contact_name
+    or grafana_cp_existing[0].settings.addresses | default('') != grafana_alerting_contact_addresses
+  changed_when: grafana_cp_write.status in [200, 202]
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (écriture du point de contact)
+  ansible.builtin.assert:
+    that: grafana_cp_write.status in [200, 202]
+    fail_msg: "Grafana a répondu {{ grafana_cp_write.status }} : {{ grafana_cp_write.json.message | default('') }}"
+    quiet: true
+  when: grafana_cp_write is not skipped
+
+# --- Politique de notification racine ---
+- name: Lire la politique de notification
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/v1/provisioning/policies"
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    status_code: [200, 401, 403]
+  register: grafana_policy
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (politique)
+  ansible.builtin.assert:
+    that: grafana_policy.status == 200
+    fail_msg: "Grafana a répondu {{ grafana_policy.status }} : {{ grafana_policy.json.message | default('') }}"
+    quiet: true
+
+- name: Appliquer la politique de notification
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/v1/provisioning/policies"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ grafana_api_token }}"
+    body:
+      receiver: "{{ grafana_alerting_contact_name }}"
+      group_by: "{{ grafana_alerting_group_by }}"
+      group_wait: "{{ grafana_alerting_group_wait }}"
+      group_interval: "{{ grafana_alerting_group_interval }}"
+      repeat_interval: "{{ grafana_alerting_repeat_interval }}"
+    body_format: json
+    status_code: [200, 202, 400, 401, 403]
+  register: grafana_policy_write
+  when: >-
+    grafana_policy.json.receiver | default('') != grafana_alerting_contact_name
+    or grafana_policy.json.group_by | default([]) != grafana_alerting_group_by
+    or grafana_policy.json.group_wait | default('') != grafana_alerting_group_wait
+    or grafana_policy.json.group_interval | default('') != grafana_alerting_group_interval
+    or grafana_policy.json.repeat_interval | default('') != grafana_alerting_repeat_interval
+  changed_when: grafana_policy_write.status in [200, 202]
+  no_log: true
+
+- name: Contrôler la réponse de Grafana (écriture de la politique)
+  ansible.builtin.assert:
+    that: grafana_policy_write.status in [200, 202]
+    fail_msg: "Grafana a répondu {{ grafana_policy_write.status }} : {{ grafana_policy_write.json.message | default('') }}"
+    quiet: true
+  when: grafana_policy_write is not skipped

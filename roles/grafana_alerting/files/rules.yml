@@ -1,0 +1,115 @@
+# Règles d'alerte de l'infra locale - maintenues dans Git, déployées par Ansible.
+# Chaque règle enchaîne 3 étapes :
+#   A : la requête PromQL (une valeur par série : par pool, par disque, par machine...)
+#   B : réduction à la dernière valeur de chaque série
+#   C : seuil ; l'alerte se déclenche quand C est vrai pendant "for"
+# Les annotations utilisent la syntaxe de Grafana ({{ $labels... }}), pas celle d'Ansible.
+
+- uid: zfs-pool-non-online
+  title: Pool ZFS non ONLINE
+  condition: C
+  for: 5m
+  noDataState: OK
+  execErrState: Error
+  labels: {severity: critical}
+  annotations:
+    summary: "Pool ZFS {{ $labels.zpool }} en état {{ $labels.state }} sur {{ $labels.instance }}"
+    description: "Le pool n'est plus ONLINE : redondance réduite ou perdue. Vérifier avec zpool status."
+  data:
+    - refId: A
+      relativeTimeRange: {from: 600, to: 0}
+      datasourceUid: prometheus-infra
+      model: {refId: A, instant: true, range: false, expr: 'node_zfs_zpool_state{state!="online"} == 1'}
+    - &reduce_b
+      refId: B
+      relativeTimeRange: {from: 0, to: 0}
+      datasourceUid: __expr__
+      model: {refId: B, type: reduce, expression: A, reducer: last, settings: {mode: dropNN}}
+    - refId: C
+      relativeTimeRange: {from: 0, to: 0}
+      datasourceUid: __expr__
+      model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}}]}
+
+- uid: agent-muet
+  title: Agent de supervision muet
+  condition: C
+  for: 5m
+  noDataState: OK
+  execErrState: Error
+  labels: {severity: critical}
+  annotations:
+    summary: "{{ $labels.instance }} n'envoie plus de métriques"
+    description: "La machine a envoyé des données au cours des dernières 24 h mais plus depuis au moins 5 minutes : machine arrêtée, Alloy arrêté, ou réseau coupé."
+  data:
+    - refId: A
+      relativeTimeRange: {from: 600, to: 0}
+      datasourceUid: prometheus-infra
+      model: {refId: A, instant: true, range: false, expr: 'group by (instance) (max_over_time(up[1d])) unless on (instance) group by (instance) (up)'}
+    - *reduce_b
+    - refId: C
+      relativeTimeRange: {from: 0, to: 0}
+      datasourceUid: __expr__
+      model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [0]}}]}
+
+- uid: disque-plein-linux
+  title: Disque presque plein (Linux)
+  condition: C
+  for: 15m
+  noDataState: OK
+  execErrState: Error
+  labels: {severity: warning}
+  annotations:
+    summary: "{{ $labels.mountpoint }} rempli à {{ humanize $values.B.Value }} % sur {{ $labels.instance }}"
+    description: "Le système de fichiers dépasse 90 % depuis 15 minutes."
+  data:
+    - refId: A
+      relativeTimeRange: {from: 600, to: 0}
+      datasourceUid: prometheus-infra
+      model: {refId: A, instant: true, range: false, expr: '100 * (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|overlay|squashfs|nsfs|fuse.*"} / node_filesystem_size_bytes{fstype!~"tmpfs|ramfs|overlay|squashfs|nsfs|fuse.*"})'}
+    - *reduce_b
+    - refId: C
+      relativeTimeRange: {from: 0, to: 0}
+      datasourceUid: __expr__
+      model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [90]}}]}
+
+- uid: disque-plein-windows
+  title: Disque presque plein (Windows)
+  condition: C
+  for: 15m
+  noDataState: OK
+  execErrState: Error
+  labels: {severity: warning}
+  annotations:
+    summary: "Volume {{ $labels.volume }} rempli à {{ humanize $values.B.Value }} % sur {{ $labels.instance }}"
+    description: "Le volume dépasse 90 % depuis 15 minutes."
+  data:
+    - refId: A
+      relativeTimeRange: {from: 600, to: 0}
+      datasourceUid: prometheus-infra
+      model: {refId: A, instant: true, range: false, expr: '100 * (1 - windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*"} / windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*"})'}
+    - *reduce_b
+    - refId: C
+      relativeTimeRange: {from: 0, to: 0}
+      datasourceUid: __expr__
+      model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [90]}}]}
+
+- uid: ntp-derive-windows
+  title: Dérive NTP (Windows)
+  condition: C
+  for: 15m
+  noDataState: OK
+  execErrState: Error
+  labels: {severity: warning}
+  annotations:
+    summary: "Décalage horaire de {{ humanize $values.B.Value }} s sur {{ $labels.instance }}"
+    description: "Au-delà de quelques minutes, l'authentification Kerberos du domaine échoue. Vérifier w32tm /query /status."
+  data:
+    - refId: A
+      relativeTimeRange: {from: 600, to: 0}
+      datasourceUid: prometheus-infra
+      model: {refId: A, instant: true, range: false, expr: 'abs(windows_time_computed_time_offset_seconds)'}
+    - *reduce_b
+    - refId: C
+      relativeTimeRange: {from: 0, to: 0}
+      datasourceUid: __expr__
+      model: {refId: C, type: threshold, expression: B, conditions: [{evaluator: {type: gt, params: [1]}}]}

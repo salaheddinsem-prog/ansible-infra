@@ -1,0 +1,5 @@
+---
+- name: Alertes Grafana (point de contact, politique, règles)
+  hosts: swarm-mgr01
+  roles:
+    - grafana_alerting
