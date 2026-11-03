@@ -13,3 +13,8 @@ postgresql_app_dbs:
     password: "{{ vault_grafana_db_password }}"
     allowed_hosts:
       - 172.27.248.110   # swarm-mgr01 (Grafana epingle sur ce noeud)
+  - name: js7
+    owner: js7
+    password: "{{ vault_js7_db_password }}"
+    allowed_hosts:
+      - 172.27.248.112   # swarm-wrk02 (JOC epingle sur ce noeud)
