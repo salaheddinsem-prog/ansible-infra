@@ -3,5 +3,5 @@
 *.log
 collections/
 
-# Fichiers Ansible Vault (non publiés)
+# Fichiers Ansible Vault (non publies)
 **/vault.yml
