@@ -6,27 +6,7 @@ Automatisation Ansible d'une infrastructure on-premise : cluster Docker Swarm, s
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    ctrl["maestro<br/>contrôleur Ansible<br/>172.27.248.114"]
-
-    subgraph swarm["Cluster Docker Swarm"]
-        mgr["swarm-mgr01<br/>172.27.248.110<br/>Grafana · Zabbix · connecteurs JumpServer"]
-        wrk1["swarm-wrk01<br/>172.27.248.111<br/>Prometheus · indexer Wazuh"]
-        wrk2["swarm-wrk02<br/>172.27.248.112<br/>JumpServer core · Wazuh manager · JS7"]
-    end
-
-    bdd["bdd-srv<br/>172.27.248.150<br/>PostgreSQL 16"]
-    win["Serveurs Windows"]
-    pve["Hyperviseur Proxmox"]
-
-    ctrl -- SSH --> swarm
-    ctrl -- SSH --> bdd
-    ctrl -- WinRM --> win
-    swarm -- PostgreSQL --> bdd
-    win -- "Alloy remote_write" --> wrk1
-    bdd -- "Alloy remote_write" --> wrk1
-```
+![Architecture ansible-infra](docs/architecture.svg)
 
 | Hôte | Adresse | Rôle |
 |---|---|---|
