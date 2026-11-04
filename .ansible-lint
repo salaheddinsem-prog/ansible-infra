@@ -4,3 +4,12 @@ exclude_paths:
   - collections/
   - .ansible/
   - .github/
+
+skip_list:
+  # Variables partagees entre roles et referencees dans l'inventaire et le Vault :
+  # les renommer casserait la configuration existante.
+  - var-naming[no-role-prefix]
+
+warn_list:
+  # Dashboards Grafana et expressions Jinja longues : signale sans bloquer.
+  - yaml[line-length]

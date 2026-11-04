@@ -12,6 +12,7 @@
   loop: "{{ postgresql_app_dbs }}"
   loop_control:
     label: "{{ item.owner }}"
+  become: true
   become_user: postgres
   no_log: true
 
@@ -24,6 +25,7 @@
   loop: "{{ postgresql_app_dbs }}"
   loop_control:
     label: "{{ item.name }}"
+  become: true
   become_user: postgres
 
 - name: Autoriser les hôtes applicatifs dans pg_hba.conf

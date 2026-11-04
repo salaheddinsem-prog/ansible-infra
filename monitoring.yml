@@ -1,9 +1,22 @@
 ---
-# Chaîne complète de supervision, dans l'ordre des dépendances
-- import_playbook: prometheus-stack.yml
-- import_playbook: ca-trust.yml
-- import_playbook: grafana-datasource.yml
-- import_playbook: grafana-zabbix-datasource.yml
-- import_playbook: alloy.yml
-- import_playbook: grafana-dashboards.yml
-- import_playbook: grafana-alerting.yml
+# Chaine complete de supervision, dans l'ordre des dependances
+- name: Deployer Prometheus
+  ansible.builtin.import_playbook: prometheus-stack.yml
+
+- name: Deployer la CA interne
+  ansible.builtin.import_playbook: ca-trust.yml
+
+- name: Configurer la datasource Prometheus dans Grafana
+  ansible.builtin.import_playbook: grafana-datasource.yml
+
+- name: Configurer la datasource Zabbix dans Grafana
+  ansible.builtin.import_playbook: grafana-zabbix-datasource.yml
+
+- name: Deployer les agents Alloy
+  ansible.builtin.import_playbook: alloy.yml
+
+- name: Importer les dashboards Grafana
+  ansible.builtin.import_playbook: grafana-dashboards.yml
+
+- name: Configurer l'alerting Grafana
+  ansible.builtin.import_playbook: grafana-alerting.yml

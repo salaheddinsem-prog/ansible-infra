@@ -84,7 +84,7 @@
         path: "{{ jms_stack_tmp.path }}"
         state: absent
       check_mode: false
-      changed_when: false  
+      changed_when: false
       when: jms_stack_tmp.path is defined
 - name: Deployer la stack
   community.docker.docker_stack:
