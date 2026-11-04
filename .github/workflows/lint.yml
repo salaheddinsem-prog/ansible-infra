@@ -29,7 +29,8 @@ jobs:
           ansible-galaxy collection install -r requirements.yml
 
       - name: yamllint
-        run: yamllint .
+        run: yamllint -f parsable .
 
       - name: ansible-lint
+        if: always()
         run: ansible-lint
