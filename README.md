@@ -1,5 +1,7 @@
 # ansible-infra
 
+[![Lint](https://github.com/salaheddinsem-prog/ansible-infra/actions/workflows/lint.yml/badge.svg)](https://github.com/salaheddinsem-prog/ansible-infra/actions/workflows/lint.yml)
+
 Automatisation Ansible d'une infrastructure on-premise : cluster Docker Swarm, supervision (Prometheus, Grafana, Zabbix, Wazuh), bastion d'accès JumpServer, ordonnanceur JS7 et bases PostgreSQL, sur des hôtes Linux et Windows.
 
 > Les adresses IP, domaines et noms présents dans ce dépôt sont fictifs. Les secrets sont gérés avec Ansible Vault et ne sont pas versionnés.
