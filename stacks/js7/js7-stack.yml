@@ -1,0 +1,79 @@
+# Stack JS7 JobScheduler - instance de decouverte (pas la prod)
+# Reference : Git (/root/ansible-infra/stacks/js7/js7-stack.yml)
+# Deploiement : Portainer uniquement (stack js7). Jamais docker stack deploy ni Ansible.
+# Donnees : /srv/js7 sur swarm-wrk02 (preparees a la main, proprietaire 1500:0)
+
+version: "3.8"
+
+services:
+  joc:
+    image: sosberlin/js7:joc-2-9-1
+    hostname: js7-joc
+    environment:
+      RUN_JS_USER_ID: "1500:0"
+      RUN_JS_HTTPS_PORT: "4443"
+      RUN_JS_JAVA_OPTIONS: "-Xmx512m"
+    volumes:
+      - /srv/js7/joc/config:/var/sos-berlin.com/js7/joc/resources/joc
+    ports:
+      - target: 4443
+        published: 8445
+        protocol: tcp
+        mode: ingress
+    networks:
+      - js7
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == swarm-wrk02
+      resources:
+        limits:
+          memory: 1280M
+      update_config:
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+
+  controller:
+    image: sosberlin/js7:controller-2-9-1
+    hostname: js7-controller
+    environment:
+      RUN_JS_ID: js7-local
+      RUN_JS_USER_ID: "1500:0"
+      RUN_JS_HTTP_PORT: "4444"
+      RUN_JS_JAVA_OPTIONS: "-Xmx256m"
+    volumes:
+      - /srv/js7/controller/data:/var/sos-berlin.com/js7/controller
+    networks:
+      - js7
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == swarm-wrk02
+      resources:
+        limits:
+          memory: 768M
+      update_config:
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+
+networks:
+  js7:
+    driver: overlay
