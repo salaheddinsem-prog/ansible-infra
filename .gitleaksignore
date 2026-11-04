@@ -1,6 +1,0 @@
-800dc1c59d3cbf9d2af9c8d0dad8fed45e0e99eb:roles/prometheus_stack/defaults/main.yml:generic-api-key:24
-800dc1c59d3cbf9d2af9c8d0dad8fed45e0e99eb:roles/prometheus_stack/defaults/main.yml:generic-api-key:25
-cf0b4e927b8cdfaadf0542340f3ee9c9eae09caf:roles/grafana_stack/defaults/main.yml:generic-api-key:18
-cf0b4e927b8cdfaadf0542340f3ee9c9eae09caf:roles/grafana_stack/defaults/main.yml:generic-api-key:19
-e88ce7663d976df5ba7a88b1ed55ce638fd169c0:roles/jumpserver_stack/defaults/main.yml:generic-api-key:20
-e88ce7663d976df5ba7a88b1ed55ce638fd169c0:roles/jumpserver_stack/defaults/main.yml:generic-api-key:21

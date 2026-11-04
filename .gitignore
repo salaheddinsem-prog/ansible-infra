@@ -2,3 +2,6 @@
 .vault_pass*
 *.log
 collections/
+
+# Fichiers Ansible Vault (non publiés)
+**/vault.yml
